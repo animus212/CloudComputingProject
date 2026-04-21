@@ -1,23 +1,21 @@
-# Stage 1: Build with Maven and Java 21
+# Stage 1: Build
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
 
-# Copy the parent pom and the specific service code
-COPY pom.xml /app/service-pom.xml
-COPY src /app/src
+# 1. Copy the Parent POM from the root context
+COPY pom.xml /app/pom.xml
 
-# Build the application (skipping tests for faster builds)
-RUN mvn -f /app/service-pom.xml clean package -DskipTests
+# 2. Copy the specific service code
+# (Paths assume you run 'docker build' from the root folder)
+COPY RegistrationService /app/RegistrationService
 
-# Stage 2: Lightweight Runtime
+# 3. Build the service
+WORKDIR /app/RegistrationService
+RUN mvn clean package -DskipTests
+
+# Stage 2: Run
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-
-# Copy only the built JAR from the first stage
-COPY --from=build /app/target/*.jar app.jar
-
-# Expose the standard Spring Boot port
+COPY --from=build /app/RegistrationService/target/*.jar app.jar
 EXPOSE 8080
-
-# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
