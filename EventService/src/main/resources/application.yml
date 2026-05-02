@@ -1,0 +1,28 @@
+# Base configuration - shared across all profiles
+spring:
+  application:
+    name: user-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8081}
+
+jwt:
+  secret: ${JWT_SECRET:must-be-at-least-256-bits-long-secret-key-here}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24 hours
+
+logging:
+  level:
+    com.eventmgmt: INFO

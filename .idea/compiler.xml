@@ -8,15 +8,19 @@
         <outputRelativeToContentRoot value="true" />
         <module name="RegistrationService" />
         <module name="EventService" />
-        <module name="UserManagementService" />
+        <module name="user-service" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="UserService" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="EventService" options="" />
+      <module name="EventService" options="-parameters" />
       <module name="RegistrationService" options="" />
-      <module name="UserManagementService" options="" />
+      <module name="UserService" options="" />
+      <module name="user-service" options="-parameters" />
     </option>
   </component>
 </project>
