@@ -1,13 +1,11 @@
-package com.cloud.UserManagementService;
+package com.cloud.UserService;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class UserManagementServiceApplication {
-
+public class UserServiceApplication {
 	public static void main(String[] args) {
-		SpringApplication.run(UserManagementServiceApplication.class, args);
+		SpringApplication.run(UserServiceApplication.class, args);
 	}
-
 }

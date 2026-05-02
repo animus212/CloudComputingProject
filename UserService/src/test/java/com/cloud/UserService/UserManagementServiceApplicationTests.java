@@ -1,4 +1,4 @@
-package com.cloud.UserManagementService;
+package com.cloud.UserService;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
