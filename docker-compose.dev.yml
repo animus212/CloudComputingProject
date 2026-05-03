@@ -5,6 +5,8 @@ x-service-common: &service-common
 
 x-java-service: &java-service
   <<: *service-common
+  env_file:
+    - .env.dev
   build:
     context: .
     args:
