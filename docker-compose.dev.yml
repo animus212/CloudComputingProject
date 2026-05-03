@@ -1,0 +1,240 @@
+version: "3.9"
+
+x-service-common: &service-common
+  restart: unless-stopped
+  networks:
+    - dev-network
+
+x-java-service: &java-service
+  <<: *service-common
+  build:
+    context: .
+    args:
+      - SPRING_PROFILES_ACTIVE=dev
+  environment:
+    SPRING_PROFILES_ACTIVE: dev
+    JWT_SECRET: ${JWT_SECRET}
+    JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
+    RABBITMQ_HOST: ${RABBITMQ_HOST}
+    RABBITMQ_PORT: ${RABBITMQ_PORT}
+    RABBITMQ_USER: ${RABBITMQ_USER}
+    RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+  depends_on:
+    rabbitmq:
+      condition: service_healthy
+
+services:
+  rabbitmq:
+    <<: *service-common
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq-dev
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "${RABBITMQ_MGMT_HOST_PORT:-15672}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - rabbitmq-dev-data:/var/lib/rabbitmq
+
+  user-db:
+    <<: *service-common
+    image: postgres:16-alpine
+    container_name: user-db-dev
+    environment:
+      POSTGRES_DB: ${USER_DB_NAME}
+      POSTGRES_USER: ${USER_DB_USER}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+    ports:
+      - "${USER_DB_HOST_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER} -d ${USER_DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - user-db-dev-data:/var/lib/postgresql/data
+
+  event-db:
+    <<: *service-common
+    image: postgres:16-alpine
+    container_name: event-db-dev
+    environment:
+      POSTGRES_DB: ${EVENT_DB_NAME}
+      POSTGRES_USER: ${EVENT_DB_USER}
+      POSTGRES_PASSWORD: ${EVENT_DB_PASSWORD}
+    ports:
+      - "${EVENT_DB_HOST_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${EVENT_DB_USER} -d ${EVENT_DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - event-db-dev-data:/var/lib/postgresql/data
+
+  registration-db:
+    <<: *service-common
+    image: postgres:16-alpine
+    container_name: registration-db-dev
+    environment:
+      POSTGRES_DB: ${REGISTRATION_DB_NAME}
+      POSTGRES_USER: ${REGISTRATION_DB_USER}
+      POSTGRES_PASSWORD: ${REGISTRATION_DB_PASSWORD}
+    ports:
+      - "${REGISTRATION_DB_HOST_PORT:-5434}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${REGISTRATION_DB_USER} -d ${REGISTRATION_DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - registration-db-dev-data:/var/lib/postgresql/data
+
+  notification-db:
+    <<: *service-common
+    image: postgres:16-alpine
+    container_name: notification-db-dev
+    environment:
+      POSTGRES_DB: ${NOTIFICATION_DB_NAME}
+      POSTGRES_USER: ${NOTIFICATION_DB_USER}
+      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+    ports:
+      - "${NOTIFICATION_DB_HOST_PORT:-5435}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${NOTIFICATION_DB_USER} -d ${NOTIFICATION_DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - notification-db-dev-data:/var/lib/postgresql/data
+
+  mailhog:
+    <<: *service-common
+    image: mailhog/mailhog:latest
+    container_name: mailhog-dev
+    ports:
+      - "${MAILHOG_UI_PORT:-8025}:8025"
+
+  user-service:
+    <<: *java-service
+    container_name: user-service-dev
+    build:
+      context: ./user-service
+    environment:
+      DB_HOST: ${USER_DB_HOST}
+      DB_PORT: ${USER_DB_PORT}
+      DB_NAME: ${USER_DB_NAME}
+      DB_USER: ${USER_DB_USER}
+      DB_PASSWORD: ${USER_DB_PASSWORD}
+      SERVER_PORT: 8081
+      JAVA_OPTS: "-XX:+UseContainerSupport -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    depends_on:
+      user-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "5005:5005"
+
+  event-service:
+    <<: *java-service
+    container_name: event-service-dev
+    build:
+      context: ./event-service
+    environment:
+      DB_HOST: ${EVENT_DB_HOST}
+      DB_PORT: ${EVENT_DB_PORT}
+      DB_NAME: ${EVENT_DB_NAME}
+      DB_USER: ${EVENT_DB_USER}
+      DB_PASSWORD: ${EVENT_DB_PASSWORD}
+      SERVER_PORT: 8082
+      JAVA_OPTS: "-XX:+UseContainerSupport -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006"
+    depends_on:
+      event-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "5006:5006"
+
+  registration-service:
+    <<: *java-service
+    container_name: registration-service-dev
+    build:
+      context: ./registration-service
+    environment:
+      DB_HOST: ${REGISTRATION_DB_HOST}
+      DB_PORT: ${REGISTRATION_DB_PORT}
+      DB_NAME: ${REGISTRATION_DB_NAME}
+      DB_USER: ${REGISTRATION_DB_USER}
+      DB_PASSWORD: ${REGISTRATION_DB_PASSWORD}
+      SERVER_PORT: 8083
+      EVENT_SERVICE_URL: ${EVENT_SERVICE_URL}
+      JAVA_OPTS: "-XX:+UseContainerSupport -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007"
+    depends_on:
+      registration-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      event-service:
+        condition: service_started
+    ports:
+      - "5007:5007"
+
+  notification-service:
+    <<: *java-service
+    container_name: notification-service-dev
+    build:
+      context: ./notification-service
+    environment:
+      DB_HOST: ${NOTIFICATION_DB_HOST}
+      DB_PORT: ${NOTIFICATION_DB_PORT}
+      DB_NAME: ${NOTIFICATION_DB_NAME}
+      DB_USER: ${NOTIFICATION_DB_USER}
+      DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+      SERVER_PORT: 8084
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      MAIL_USER: ""
+      MAIL_PASSWORD: ""
+      JAVA_OPTS: "-XX:+UseContainerSupport -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008"
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "5008:5008"
+
+  nginx:
+    <<: *service-common
+    container_name: nginx-dev
+    build:
+      context: ./nginx
+      args:
+        - NGINX_CONF=nginx.dev.conf
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+    depends_on:
+      - user-service
+      - event-service
+      - registration-service
+      - notification-service
+
+networks:
+  dev-network:
+    driver: bridge
+    name: dev-network
+
+volumes:
+  rabbitmq-dev-data:
+  user-db-dev-data:
+  event-db-dev-data:
+  registration-db-dev-data:
+  notification-db-dev-data:

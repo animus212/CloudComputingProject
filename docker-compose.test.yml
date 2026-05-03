@@ -1,0 +1,216 @@
+version: "3.9"
+
+x-test-java: &test-java
+  restart: "no"
+  networks:
+    - test-network
+  environment:
+    SPRING_PROFILES_ACTIVE: test
+    JWT_SECRET: ${JWT_SECRET}
+    RABBITMQ_HOST: ${RABBITMQ_HOST}
+    RABBITMQ_PORT: ${RABBITMQ_PORT}
+    RABBITMQ_USER: ${RABBITMQ_USER}
+    RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
+services:
+  rabbitmq-test:
+    image: rabbitmq:3.13-alpine
+    container_name: rabbitmq-test
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  user-db-test:
+    image: postgres:16-alpine
+    container_name: user-db-test
+    networks:
+      - test-network
+    environment:
+      POSTGRES_DB: ${USER_DB_NAME}
+      POSTGRES_USER: ${USER_DB_USER}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+    ports:
+      - "${USER_DB_HOST_PORT:-9432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER}"]
+      interval: 5s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  event-db-test:
+    image: postgres:16-alpine
+    container_name: event-db-test
+    networks:
+      - test-network
+    environment:
+      POSTGRES_DB: ${EVENT_DB_NAME}
+      POSTGRES_USER: ${EVENT_DB_USER}
+      POSTGRES_PASSWORD: ${EVENT_DB_PASSWORD}
+    ports:
+      - "${EVENT_DB_HOST_PORT:-9433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${EVENT_DB_USER}"]
+      interval: 5s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  registration-db-test:
+    image: postgres:16-alpine
+    container_name: registration-db-test
+    networks:
+      - test-network
+    environment:
+      POSTGRES_DB: ${REGISTRATION_DB_NAME}
+      POSTGRES_USER: ${REGISTRATION_DB_USER}
+      POSTGRES_PASSWORD: ${REGISTRATION_DB_PASSWORD}
+    ports:
+      - "${REGISTRATION_DB_HOST_PORT:-9434}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${REGISTRATION_DB_USER}"]
+      interval: 5s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  notification-db-test:
+    image: postgres:16-alpine
+    container_name: notification-db-test
+    networks:
+      - test-network
+    environment:
+      POSTGRES_DB: ${NOTIFICATION_DB_NAME}
+      POSTGRES_USER: ${NOTIFICATION_DB_USER}
+      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+    ports:
+      - "${NOTIFICATION_DB_HOST_PORT:-9435}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${NOTIFICATION_DB_USER}"]
+      interval: 5s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  user-service-test:
+    <<: *test-java
+    container_name: user-service-test
+    build:
+      context: ./user-service
+    environment:
+      DB_HOST: user-db-test
+      DB_PORT: 5432
+      DB_NAME: ${USER_DB_NAME}
+      DB_USER: ${USER_DB_USER}
+      DB_PASSWORD: ${USER_DB_PASSWORD}
+      SERVER_PORT: 8081
+      SPRING_PROFILES_ACTIVE: test
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_HOST: rabbitmq-test
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    depends_on:
+      user-db-test:
+        condition: service_healthy
+      rabbitmq-test:
+        condition: service_healthy
+
+  event-service-test:
+    <<: *test-java
+    container_name: event-service-test
+    build:
+      context: ./event-service
+    environment:
+      DB_HOST: event-db-test
+      DB_PORT: 5432
+      DB_NAME: ${EVENT_DB_NAME}
+      DB_USER: ${EVENT_DB_USER}
+      DB_PASSWORD: ${EVENT_DB_PASSWORD}
+      SERVER_PORT: 8082
+      SPRING_PROFILES_ACTIVE: test
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_HOST: rabbitmq-test
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    depends_on:
+      event-db-test:
+        condition: service_healthy
+      rabbitmq-test:
+        condition: service_healthy
+
+  registration-service-test:
+    <<: *test-java
+    container_name: registration-service-test
+    build:
+      context: ./registration-service
+    environment:
+      DB_HOST: registration-db-test
+      DB_PORT: 5432
+      DB_NAME: ${REGISTRATION_DB_NAME}
+      DB_USER: ${REGISTRATION_DB_USER}
+      DB_PASSWORD: ${REGISTRATION_DB_PASSWORD}
+      SERVER_PORT: 8083
+      SPRING_PROFILES_ACTIVE: test
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_HOST: rabbitmq-test
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      EVENT_SERVICE_URL: http://event-service-test:8082
+    depends_on:
+      registration-db-test:
+        condition: service_healthy
+      rabbitmq-test:
+        condition: service_healthy
+
+  notification-service-test:
+    <<: *test-java
+    container_name: notification-service-test
+    build:
+      context: ./notification-service
+    environment:
+      DB_HOST: notification-db-test
+      DB_PORT: 5432
+      DB_NAME: ${NOTIFICATION_DB_NAME}
+      DB_USER: ${NOTIFICATION_DB_USER}
+      DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+      SERVER_PORT: 8084
+      SPRING_PROFILES_ACTIVE: test
+      RABBITMQ_HOST: rabbitmq-test
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      MAIL_HOST: localhost
+      MAIL_PORT: 1025
+    depends_on:
+      notification-db-test:
+        condition: service_healthy
+      rabbitmq-test:
+        condition: service_healthy
+
+  nginx-test:
+    container_name: nginx-test
+    networks:
+      - test-network
+    build:
+      context: ./nginx
+      args:
+        - NGINX_CONF=nginx.test.conf
+    ports:
+      - "${NGINX_PORT:-9080}:80"
+    depends_on:
+      - user-service-test
+      - event-service-test
+      - registration-service-test
+
+networks:
+  test-network:
+    driver: bridge
+    name: test-network
