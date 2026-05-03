@@ -24,9 +24,10 @@ public class RegistrationController {
             HttpServletRequest httpRequest
     ) {
         Long userId = (Long) httpRequest.getAttribute("userId");
+        String userEmail = (String) httpRequest.getAttribute("userEmail");
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(registrationService.createRegistration(request, userId));
+                .body(registrationService.createRegistration(request, userId, userEmail));
     }
 
     @GetMapping("/my")

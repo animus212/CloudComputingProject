@@ -29,12 +29,13 @@ public class RegistrationService {
     private final RabbitTemplate rabbitTemplate;
 
     @Transactional
-    public RegistrationResponse createRegistration(CreateRegistrationRequest request, Long userId) {
+    public RegistrationResponse createRegistration(CreateRegistrationRequest request, Long userId, String userEmail) {
         Long eventId = request.getEventId();
 
         boolean alreadyRegistered = registrationRepository.existsByUserIdAndEventIdAndStatusNot(
                 userId, eventId, RegistrationStatus.CANCELLED
         );
+
         if (alreadyRegistered) {
             throw new DuplicateRegistrationException(
                     "User " + userId + " is already registered for event " + eventId
@@ -45,6 +46,7 @@ public class RegistrationService {
 
         Registration registration = Registration.builder()
                 .userId(userId)
+                .userEmail(userEmail)
                 .eventId(eventId)
                 .eventTitle(eventSummary.getTitle())
                 .status(RegistrationStatus.CONFIRMED)
@@ -103,6 +105,7 @@ public class RegistrationService {
             RegistrationCreatedEvent event = RegistrationCreatedEvent.builder()
                     .registrationId(reg.getId())
                     .userId(reg.getUserId())
+                    .userEmail(reg.getUserEmail())
                     .eventId(reg.getEventId())
                     .eventTitle(reg.getEventTitle())
                     .registeredAt(reg.getRegisteredAt())
@@ -123,6 +126,7 @@ public class RegistrationService {
             RegistrationCancelledEvent event = RegistrationCancelledEvent.builder()
                     .registrationId(reg.getId())
                     .userId(reg.getUserId())
+                    .userEmail(reg.getUserEmail())
                     .eventId(reg.getEventId())
                     .eventTitle(reg.getEventTitle())
                     .build();

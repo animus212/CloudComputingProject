@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class RegistrationCreatedEvent implements Serializable {
     private Long registrationId;
     private Long userId;
+    private String userEmail;
     private Long eventId;
     private String eventTitle;
     private LocalDateTime registeredAt;

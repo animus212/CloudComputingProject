@@ -28,6 +28,9 @@ public class Registration {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "user_email")
+    private String userEmail;
+
     @Column(name = "event_id", nullable = false)
     private Long eventId;
 

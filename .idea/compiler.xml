@@ -6,13 +6,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="RegistrationService" />
         <module name="EventService" />
         <module name="user-service" />
+        <module name="RegistrationService" />
+        <module name="notification-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="event-management-parent" target="1.5" />
       <module name="NotificationService" target="21" />
       <module name="UserService" target="1.8" />
     </bytecodeTargetLevel>
@@ -22,6 +22,7 @@
       <module name="EventService" options="-parameters" />
       <module name="RegistrationService" options="-parameters" />
       <module name="UserService" options="" />
+      <module name="notification-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
     </option>
   </component>

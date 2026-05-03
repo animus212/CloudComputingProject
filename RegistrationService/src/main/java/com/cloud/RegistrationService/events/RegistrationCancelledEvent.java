@@ -14,6 +14,7 @@ import java.io.Serializable;
 public class RegistrationCancelledEvent implements Serializable {
     private Long registrationId;
     private Long userId;
+    private String userEmail;
     private Long eventId;
     private String eventTitle;
 }

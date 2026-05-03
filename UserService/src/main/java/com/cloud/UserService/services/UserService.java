@@ -43,7 +43,6 @@ public class UserService {
             throw new UserAlreadyExistsException("Email already registered: " + request.getEmail());
         }
 
-        // Build and save user
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
@@ -59,7 +58,7 @@ public class UserService {
         publishUserRegisteredEvent(user);
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-        String token = jwtService.generateToken(userDetails, user.getId(), user.getRole().name());
+        String token = jwtService.generateToken(userDetails, user.getId(), user.getRole().name(), user.getEmail());
 
         return AuthResponse.builder()
                 .token(token)
@@ -77,7 +76,7 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + request.getUsername()));
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-        String token = jwtService.generateToken(userDetails, user.getId(), user.getRole().name());
+        String token = jwtService.generateToken(userDetails, user.getId(), user.getRole().name(), user.getEmail());
 
         return AuthResponse.builder()
                 .token(token)
