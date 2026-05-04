@@ -1,0 +1,21 @@
+# Credentials — never commit these
+*.env.local
+
+# Maven
+target/
+*.jar
+*.war
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.DS_Store
+
+# Docker volumes
+docker-volumes/
+
+# Logs
+*.log
+logs/

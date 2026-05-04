@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: registration-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: ${SERVER_PORT:8083}
+
+jwt:
+  secret: ${JWT_SECRET}
+
+services:
+  event-service:
+    base-url: ${EVENT_SERVICE_URL:http://event-service:8082}

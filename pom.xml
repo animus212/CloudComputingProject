@@ -12,9 +12,10 @@
     <name>Event Management System Parent</name>
 
     <modules>
-        <module>UserManagementService</module>
+        <module>UserService</module>
         <module>EventService</module>
         <module>RegistrationService</module>
+        <module>NotificationService</module>
     </modules>
 
     <properties>
