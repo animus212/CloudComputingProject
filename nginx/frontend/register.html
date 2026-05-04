@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Create Account</h1>
+    <div id="error" class="error hidden"></div>
+    <form id="registerForm">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password (min 8 chars)" required>
+        <input type="text" id="firstName" placeholder="First Name">
+        <input type="text" id="lastName" placeholder="Last Name">
+        <button type="submit">Register</button>
+    </form>
+    <p>Already have an account? <a href="/login.html">Login</a></p>
+</div>
+
+<script src="app.js"></script>
+<script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorDiv = document.getElementById('error');
+        errorDiv.classList.add('hidden');
+
+        try {
+            const data = await apiCall('/api/auth/register', 'POST', {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value
+            });
+
+            Auth.setToken(data.token);
+            Auth.setUser(data.user);
+            window.location.href = '/dashboard.html';
+        } catch (err) {
+            errorDiv.textContent = err.message;
+            errorDiv.classList.remove('hidden');
+        }
+    });
+</script>
+</body>
+</html>

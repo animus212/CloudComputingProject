@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Login</h1>
+    <div id="error" class="error hidden"></div>
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+    <p>No account? <a href="/register.html">Register</a></p>
+</div>
+
+<script src="app.js"></script>
+<script>
+
+    if (Auth.isLoggedIn()) window.location.href = '/dashboard.html';
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorDiv = document.getElementById('error');
+        errorDiv.classList.add('hidden');
+
+        try {
+            const data = await apiCall('/api/auth/login', 'POST', {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            });
+
+            Auth.setToken(data.token);
+            Auth.setUser(data.user);
+            window.location.href = '/dashboard.html';
+        } catch (err) {
+            errorDiv.textContent = err.message;
+            errorDiv.classList.remove('hidden');
+        }
+    });
+</script>
+</body>
+</html>
