@@ -1,73 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Events</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-<nav>
-    <a href="/">Events</a>
-    <div id="navAuth">
-        <a href="/login.html">Login</a>
-        <a href="/register.html">Register</a>
-    </div>
-</nav>
+    <head>
+        <meta charset="UTF-8">
+        <title>Events</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <nav>
+            <a href="/">Events</a>
+            <div id="navAuth">
+                <a href="/login.html">Login</a>
+                <a href="/register.html">Register</a>
+            </div>
+        </nav>
 
-<div class="container">
-    <h1>Upcoming Events</h1>
-    <div id="events" class="events-grid">Loading...</div>
-</div>
+        <div class="container">
+            <h1>Upcoming Events</h1>
+            <div id="events" class="events-grid">Loading...</div>
+        </div>
 
-<script src="app.js"></script>
-<script>
-    // Update nav if logged in
-    if (Auth.isLoggedIn()) {
-        document.getElementById('navAuth').innerHTML = `
-            <a href="/dashboard.html">My Registrations</a>
-            <button onclick="Auth.logout()">Logout</button>
-        `;
-    }
-
-    async function loadEvents() {
-        try {
-            const data = await apiCall('/api/events?page=0&size=20');
-            const container = document.getElementById('events');
-
-            if (data.content.length === 0) {
-                container.innerHTML = '<p>No events available.</p>';
-                return;
+        <script src="app.js"></script>
+        <script>
+            if (Auth.isLoggedIn()) {
+                document.getElementById('navAuth').innerHTML = `
+                    <a href="/dashboard.html">My Registrations</a>
+                    <button onclick="Auth.logout()">Logout</button>
+                `;
             }
 
-            container.innerHTML = data.content.map(event => `
-                <div class="card">
-                    <h3>${event.title}</h3>
-                    <p>${event.description || ''}</p>
-                    <p>📍 ${event.location}</p>
-                    <p>📅 ${new Date(event.startDate).toLocaleString()}</p>
-                    <p>🎟 ${event.availableSpots} spots left</p>
-                    ${Auth.isLoggedIn()
-                        ? `<button onclick="register(${event.id})">Register</button>`
-                        : `<a href="/login.html">Login to Register</a>`
+            async function loadEvents() {
+                try {
+                    const data = await apiCall('/api/events?page=0&size=20');
+                    const container = document.getElementById('events');
+
+                    if (data.content.length === 0) {
+                        container.innerHTML = '<p>No events available.</p>';
+                        return;
                     }
-                </div>
-            `).join('');
-        } catch (err) {
-            document.getElementById('events').innerHTML = `<p>Error: ${err.message}</p>`;
-        }
-    }
 
-    async function register(eventId) {
-        try {
-            await apiCall('/api/registrations', 'POST', { eventId });
-            alert('Successfully registered!');
+                    container.innerHTML = data.content.map(event => `
+                        <div class="card">
+                            <h3>${event.title}</h3>
+                            <p>${event.description || ''}</p>
+                            <p>📍 ${event.location}</p>
+                            <p>📅 ${new Date(event.startDate).toLocaleString()}</p>
+                            <p>🎟 ${event.availableSpots} spots left</p>
+                            ${Auth.isLoggedIn()
+                                ? `<button onclick="register(${event.id})">Register</button>`
+                                : `<a href="/login.html">Login to Register</a>`
+                            }
+                        </div>
+                    `).join('');
+                } catch (err) {
+                    document.getElementById('events').innerHTML = `<p>Error: ${err.message}</p>`;
+                }
+            }
+
+            async function register(eventId) {
+                try {
+                    await apiCall('/api/registrations', 'POST', { eventId });
+                    alert('Successfully registered!');
+                    loadEvents();
+                } catch (err) {
+                    alert('Registration failed: ' + err.message);
+                }
+            }
+
             loadEvents();
-        } catch (err) {
-            alert('Registration failed: ' + err.message);
-        }
-    }
-
-    loadEvents();
-</script>
-</body>
+        </script>
+    </body>
 </html>

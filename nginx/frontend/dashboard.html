@@ -1,67 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>My Registrations</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-<nav>
-    <a href="/">Events</a>
-    <span id="username"></span>
-    <button onclick="Auth.logout()">Logout</button>
-</nav>
+    <head>
+        <meta charset="UTF-8">
+        <title>My Registrations</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <nav>
+            <a href="/">Events</a>
+            <span id="username"></span>
+            <button onclick="Auth.logout()">Logout</button>
+        </nav>
 
-<div class="container">
-    <h1>My Registrations</h1>
-    <div id="registrations">Loading...</div>
-</div>
+        <div class="container">
+            <h1>My Registrations</h1>
+            <div id="registrations">Loading...</div>
+        </div>
 
-<script src="app.js"></script>
-<script>
-    // Redirect if not logged in
-    if (!Auth.isLoggedIn()) window.location.href = '/login.html';
+        <script src="app.js"></script>
+        <script>
+            if (!Auth.isLoggedIn()) window.location.href = '/login.html';
 
-    const user = Auth.getUser();
-    document.getElementById('username').textContent = user.username || '';
+            const user = Auth.getUser();
+            document.getElementById('username').textContent = user.username || '';
 
-    async function loadRegistrations() {
-        try {
-            const data = await apiCall('/api/registrations/my');
-            const container = document.getElementById('registrations');
+            async function loadRegistrations() {
+                try {
+                    const data = await apiCall('/api/registrations/my');
+                    const container = document.getElementById('registrations');
 
-            if (data.length === 0) {
-                container.innerHTML = '<p>No registrations yet. <a href="/">Browse events</a></p>';
-                return;
+                    if (data.length === 0) {
+                        container.innerHTML = '<p>No registrations yet. <a href="/">Browse events</a></p>';
+                        return;
+                    }
+
+                    container.innerHTML = data.map(reg => `
+                        <div class="card ${reg.status === 'CANCELLED' ? 'cancelled' : ''}">
+                            <h3>${reg.eventTitle}</h3>
+                            <p>Status: <strong>${reg.status}</strong></p>
+                            <p>Registered: ${new Date(reg.registeredAt).toLocaleString()}</p>
+                            ${reg.status === 'CONFIRMED'
+                                ? `<button onclick="cancel(${reg.id})">Cancel Registration</button>`
+                                : ''
+                            }
+                        </div>
+                    `).join('');
+                } catch (err) {
+                    document.getElementById('registrations').innerHTML = `<p>Error: ${err.message}</p>`;
+                }
             }
 
-            container.innerHTML = data.map(reg => `
-                <div class="card ${reg.status === 'CANCELLED' ? 'cancelled' : ''}">
-                    <h3>${reg.eventTitle}</h3>
-                    <p>Status: <strong>${reg.status}</strong></p>
-                    <p>Registered: ${new Date(reg.registeredAt).toLocaleString()}</p>
-                    ${reg.status === 'CONFIRMED'
-                        ? `<button onclick="cancel(${reg.id})">Cancel Registration</button>`
-                        : ''
-                    }
-                </div>
-            `).join('');
-        } catch (err) {
-            document.getElementById('registrations').innerHTML = `<p>Error: ${err.message}</p>`;
-        }
-    }
+            async function cancel(registrationId) {
+                if (!confirm('Cancel this registration?')) return;
+                try {
+                    await apiCall(`/api/registrations/${registrationId}`, 'DELETE');
+                    loadRegistrations();
+                } catch (err) {
+                    alert('Failed: ' + err.message);
+                }
+            }
 
-    async function cancel(registrationId) {
-        if (!confirm('Cancel this registration?')) return;
-        try {
-            await apiCall(`/api/registrations/${registrationId}`, 'DELETE');
             loadRegistrations();
-        } catch (err) {
-            alert('Failed: ' + err.message);
-        }
-    }
-
-    loadRegistrations();
-</script>
-</body>
+        </script>
+    </body>
 </html>

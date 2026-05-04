@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="EventService" />
+        <module name="UserManagementService" />
         <module name="user-service" />
         <module name="RegistrationService" />
         <module name="notification-service" />
@@ -19,11 +20,11 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="EventService" options="-parameters" />
-      <module name="RegistrationService" options="-parameters" />
+      <module name="EventService" options="" />
+      <module name="RegistrationService" options="" />
       <module name="UserService" options="" />
-      <module name="notification-service" options="-parameters" />
-      <module name="user-service" options="-parameters" />
+      <module name="notification-service" options="" />
+      <module name="user-service" options="" />
     </option>
   </component>
 </project>
