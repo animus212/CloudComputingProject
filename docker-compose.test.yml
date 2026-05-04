@@ -4,6 +4,8 @@ x-test-java: &test-java
   restart: "no"
   networks:
     - test-network
+  env_file:
+    - .env.test
   environment:
     SPRING_PROFILES_ACTIVE: test
     JWT_SECRET: ${JWT_SECRET}
@@ -101,7 +103,7 @@ services:
     <<: *test-java
     container_name: user-service-test
     build:
-      context: ./user-service
+      context: ./UserService
     environment:
       DB_HOST: user-db-test
       DB_PORT: 5432
@@ -125,7 +127,7 @@ services:
     <<: *test-java
     container_name: event-service-test
     build:
-      context: ./event-service
+      context: ./EventService
     environment:
       DB_HOST: event-db-test
       DB_PORT: 5432
@@ -149,7 +151,7 @@ services:
     <<: *test-java
     container_name: registration-service-test
     build:
-      context: ./registration-service
+      context: ./RegistrationService
     environment:
       DB_HOST: registration-db-test
       DB_PORT: 5432
@@ -174,7 +176,7 @@ services:
     <<: *test-java
     container_name: notification-service-test
     build:
-      context: ./notification-service
+      context: ./NotificationService
     environment:
       DB_HOST: notification-db-test
       DB_PORT: 5432
