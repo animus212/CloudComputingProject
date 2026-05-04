@@ -18,10 +18,11 @@ public class EventServiceClient {
                 .build();
     }
 
-    public EventSummaryDto reserveSpot(Long eventId) {
+    public EventSummaryDto reserveSpot(Long eventId, String token) {
         try {
             return webClient.post()
                     .uri("/api/events/{id}/reserve", eventId)
+                    .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .bodyToMono(EventSummaryDto.class)
                     .block();
@@ -33,10 +34,11 @@ public class EventServiceClient {
         }
     }
 
-    public void releaseSpot(Long eventId) {
+    public void releaseSpot(Long eventId, String  token) {
         try {
             webClient.post()
                     .uri("/api/events/{id}/release", eventId)
+                    .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .toBodilessEntity()
                     .block();

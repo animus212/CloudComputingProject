@@ -25,9 +25,10 @@ public class RegistrationController {
     ) {
         Long userId = (Long) httpRequest.getAttribute("userId");
         String userEmail = (String) httpRequest.getAttribute("userEmail");
+        String token = extractToken(httpRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(registrationService.createRegistration(request, userId, userEmail));
+                .body(registrationService.createRegistration(request, userId, userEmail, token));
     }
 
     @GetMapping("/my")
@@ -53,7 +54,18 @@ public class RegistrationController {
             HttpServletRequest httpRequest
     ) {
         Long userId = (Long) httpRequest.getAttribute("userId");
+        String token = extractToken(httpRequest);
 
-        return ResponseEntity.ok(registrationService.cancelRegistration(id, userId));
+        return ResponseEntity.ok(registrationService.cancelRegistration(id, userId, token));
+    }
+
+    private String extractToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+
+        return null;
     }
 }

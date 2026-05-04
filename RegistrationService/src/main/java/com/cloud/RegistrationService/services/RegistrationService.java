@@ -29,7 +29,12 @@ public class RegistrationService {
     private final RabbitTemplate rabbitTemplate;
 
     @Transactional
-    public RegistrationResponse createRegistration(CreateRegistrationRequest request, Long userId, String userEmail) {
+    public RegistrationResponse createRegistration(
+            CreateRegistrationRequest request,
+            Long userId,
+            String userEmail,
+            String token
+    ) {
         Long eventId = request.getEventId();
 
         boolean alreadyRegistered = registrationRepository.existsByUserIdAndEventIdAndStatusNot(
@@ -42,7 +47,7 @@ public class RegistrationService {
             );
         }
 
-        EventSummaryDto eventSummary = eventServiceClient.reserveSpot(eventId);
+        EventSummaryDto eventSummary = eventServiceClient.reserveSpot(eventId, token);
 
         Registration registration = Registration.builder()
                 .userId(userId)
@@ -62,7 +67,7 @@ public class RegistrationService {
     }
 
     @Transactional
-    public RegistrationResponse cancelRegistration(Long registrationId, Long userId) {
+    public RegistrationResponse cancelRegistration(Long registrationId, Long userId, String token) {
         Registration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new RegistrationNotFoundException("Registration not found: " + registrationId));
 
@@ -77,8 +82,7 @@ public class RegistrationService {
         registration.setStatus(RegistrationStatus.CANCELLED);
         registrationRepository.save(registration);
 
-        // Release the spot back in Event Service
-        eventServiceClient.releaseSpot(registration.getEventId());
+        eventServiceClient.releaseSpot(registration.getEventId(), token);
 
         publishRegistrationCancelledEvent(registration);
 
