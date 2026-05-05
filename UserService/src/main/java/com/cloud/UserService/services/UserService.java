@@ -3,6 +3,7 @@ package com.cloud.UserService.services;
 import com.cloud.UserService.configs.RabbitMQConfig;
 import com.cloud.UserService.dtos.requests.LoginRequest;
 import com.cloud.UserService.dtos.requests.UserRegistrationRequest;
+import com.cloud.UserService.dtos.requests.UserUpdateRequest;
 import com.cloud.UserService.dtos.responses.AuthResponse;
 import com.cloud.UserService.dtos.responses.UserResponse;
 import com.cloud.UserService.entities.User;
@@ -10,6 +11,7 @@ import com.cloud.UserService.events.UserRegisteredEvent;
 import com.cloud.UserService.exceptions.UserAlreadyExistsException;
 import com.cloud.UserService.exceptions.UserNotFoundException;
 import com.cloud.UserService.repositories.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -131,5 +134,29 @@ public class UserService {
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .build();
+    }
+
+    public void deleteUserById(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException("User does not exist");
+        }
+        userRepository.deleteById(id);
+    }
+
+    public UserResponse updateUserById(Long id, UserUpdateRequest request) {
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException("User does not exist");
+        }
+
+        Optional<User> user = userRepository.findById(id);
+
+        user.get().setUsername(request.getUsername());
+        user.get().setEmail(request.getEmail());
+        user.get().setPassword(request.getPassword());
+        user.get().setFirstName(request.getFirstName());
+        user.get().setLastName(request.getLastName());
+        log.info("user updated: {}", user.get().getUsername());
+
+        return mapToUserResponse(userRepository.save(user.get()));
     }
 }
