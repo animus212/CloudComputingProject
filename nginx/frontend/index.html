@@ -6,62 +6,115 @@
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
-        <nav>
-            <a href="/">Events</a>
-            <div id="navAuth">
-                <a href="/login.html">Login</a>
-                <a href="/register.html">Register</a>
-            </div>
-        </nav>
+        <nav id="nav"></nav>
 
         <div class="container">
-            <h1>Upcoming Events</h1>
-            <div id="events" class="events-grid">Loading...</div>
+            <div class="page-header">
+                <h1>Upcoming Events</h1>
+                <div class="filters">
+                    <input type="text" id="search" placeholder="Search events..." oninput="filterEvents()">
+                    <select id="typeFilter" onchange="filterEvents()">
+                        <option value="">All Types</option>
+                        <option value="CONFERENCE">Conference</option>
+                        <option value="WORKSHOP">Workshop</option>
+                        <option value="SEMINAR">Seminar</option>
+                        <option value="WEBINAR">Webinar</option>
+                        <option value="MEETUP">Meetup</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="error" class="alert alert-error hidden"></div>
+            <div id="events" class="events-grid">
+                <div class="loading">Loading events...</div>
+            </div>
+
+            <div class="pagination" id="pagination"></div>
         </div>
 
         <script src="app.js"></script>
         <script>
-            if (Auth.isLoggedIn()) {
-                document.getElementById('navAuth').innerHTML = `
-                    <a href="/dashboard.html">My Registrations</a>
-                    <button onclick="Auth.logout()">Logout</button>
-                `;
-            }
+            buildNav('home');
 
-            async function loadEvents() {
+            let allEvents = [];
+            let currentPage = 0;
+
+            async function loadEvents(page = 0) {
                 try {
-                    const data = await apiCall('/api/events?page=0&size=20');
-                    const container = document.getElementById('events');
-
-                    if (data.content.length === 0) {
-                        container.innerHTML = '<p>No events available.</p>';
-                        return;
-                    }
-
-                    container.innerHTML = data.content.map(event => `
-                        <div class="card">
-                            <h3>${event.title}</h3>
-                            <p>${event.description || ''}</p>
-                            <p>📍 ${event.location}</p>
-                            <p>📅 ${new Date(event.startDate).toLocaleString()}</p>
-                            <p>🎟 ${event.availableSpots} spots left</p>
-                            ${Auth.isLoggedIn()
-                                ? `<button onclick="register(${event.id})">Register</button>`
-                                : `<a href="/login.html">Login to Register</a>`
-                            }
-                        </div>
-                    `).join('');
+                    const data = await api(`/api/events?page=${page}&size=12`);
+                    allEvents = data.content;
+                    currentPage = page;
+                    renderEvents(allEvents);
+                    renderPagination(data);
                 } catch (err) {
-                    document.getElementById('events').innerHTML = `<p>Error: ${err.message}</p>`;
+                    showError('error', err.message);
                 }
             }
 
-            async function register(eventId) {
+            function renderEvents(events) {
+                const container = document.getElementById('events');
+                if (events.length === 0) {
+                    container.innerHTML = '<p class="empty-state">No events found.</p>';
+                    return;
+                }
+
+                container.innerHTML = events.map(event => `
+                    <div class="card event-card">
+                        <div class="card-header">
+                            <span class="event-type">${event.eventType || 'EVENT'}</span>
+                            ${statusBadge(event.status)}
+                        </div>
+                        <h3>${event.title}</h3>
+                        <p class="event-desc">${event.description || ''}</p>
+                        <div class="event-meta">
+                            <span>${event.location}</span>
+                            <span>${formatDate(event.startDate)}</span>
+                            <span>${event.availableSpots} / ${event.capacity} spots</span>
+                        </div>
+                        <div class="card-actions">
+                            ${Auth.isLoggedIn()
+                                ? event.availableSpots > 0
+                                    ? `<button class="btn-primary" onclick="registerForEvent(${event.id}, this)">Register</button>`
+                                    : `<button class="btn-outline" disabled>Full</button>`
+                                : `<a href="/login.html" class="btn-outline">Login to Register</a>`
+                            }
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function filterEvents() {
+                const search = document.getElementById('search').value.toLowerCase();
+                const type = document.getElementById('typeFilter').value;
+                const filtered = allEvents.filter(e =>
+                    (e.title.toLowerCase().includes(search) || (e.description || '').toLowerCase().includes(search)) &&
+                    (type === '' || e.eventType === type)
+                );
+                renderEvents(filtered);
+            }
+
+            function renderPagination(data) {
+                const container = document.getElementById('pagination');
+                if (data.totalPages <= 1) { container.innerHTML = ''; return; }
+
+                let html = '';
+                for (let i = 0; i < data.totalPages; i++) {
+                    html += `<button class="${i === data.number ? 'active' : ''}" onclick="loadEvents(${i})">${i + 1}</button>`;
+                }
+                container.innerHTML = html;
+            }
+
+            async function registerForEvent(eventId, btn) {
+                btn.disabled = true;
+                btn.textContent = 'Registering...';
                 try {
-                    await apiCall('/api/registrations', 'POST', { eventId });
-                    alert('Successfully registered!');
-                    loadEvents();
+                    await api('/api/registrations', 'POST', { eventId });
+                    btn.textContent = 'Registered';
+                    btn.className = 'btn-success';
+                    loadEvents(currentPage);
                 } catch (err) {
+                    btn.disabled = false;
+                    btn.textContent = 'Register';
                     alert('Registration failed: ' + err.message);
                 }
             }
