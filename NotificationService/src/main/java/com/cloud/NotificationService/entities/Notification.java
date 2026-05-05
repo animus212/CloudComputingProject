@@ -39,6 +39,10 @@ public class Notification {
     @Builder.Default
     private NotificationStatus status = NotificationStatus.PENDING;
 
+    @Column(name = "is_read", nullable = false)
+    @Builder.Default
+    private boolean read = false;
+
     @Column(name = "error_message")
     private String errorMessage;
 

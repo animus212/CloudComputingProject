@@ -1,7 +1,9 @@
 package com.cloud.UserService.dtos.requests;
 
+import com.cloud.UserService.entities.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -21,4 +23,6 @@ public class UserRegistrationRequest {
 
     private String firstName;
     private String lastName;
+
+    private Role role = Role.USER;
 }

@@ -66,10 +66,30 @@ public class RegistrationService {
         return mapToResponse(registration);
     }
 
+    public List<RegistrationResponse> getUserRegistrations(Long userId) {
+        return registrationRepository.findByUserId(userId).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    public RegistrationResponse getRegistration(Long id, Long userId) {
+        Registration reg = findRegistrationOrThrow(id);
+
+        if (!reg.getUserId().equals(userId))
+            throw new SecurityException("Access denied");
+
+        return mapToResponse(reg);
+    }
+
+    public List<RegistrationResponse> getEventRegistrations(Long eventId, Long requesterId) {
+        List<Registration> registrations = registrationRepository.findByEventId(eventId);
+
+        return registrations.stream().map(this::mapToResponse).toList();
+    }
+
     @Transactional
     public RegistrationResponse cancelRegistration(Long registrationId, Long userId, String token) {
-        Registration registration = registrationRepository.findById(registrationId)
-                .orElseThrow(() -> new RegistrationNotFoundException("Registration not found: " + registrationId));
+        Registration registration = findRegistrationOrThrow(registrationId);
 
         if (!registration.getUserId().equals(userId)) {
             throw new SecurityException("You can only cancel your own registrations");
@@ -89,19 +109,9 @@ public class RegistrationService {
         return mapToResponse(registration);
     }
 
-    public List<RegistrationResponse> getUserRegistrations(Long userId) {
-        return registrationRepository.findByUserId(userId).stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    public RegistrationResponse getRegistration(Long id, Long userId) {
-        Registration reg = registrationRepository.findById(id)
+    private Registration findRegistrationOrThrow(Long id) {
+        return registrationRepository.findById(id)
                 .orElseThrow(() -> new RegistrationNotFoundException("Registration not found: " + id));
-        if (!reg.getUserId().equals(userId)) {
-            throw new SecurityException("Access denied");
-        }
-        return mapToResponse(reg);
     }
 
     private void publishRegistrationCreatedEvent(Registration reg) {

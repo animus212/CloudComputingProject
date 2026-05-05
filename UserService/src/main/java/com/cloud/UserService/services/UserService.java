@@ -2,20 +2,21 @@ package com.cloud.UserService.services;
 
 import com.cloud.UserService.configs.RabbitMQConfig;
 import com.cloud.UserService.dtos.requests.LoginRequest;
+import com.cloud.UserService.dtos.requests.UpdateProfileRequest;
 import com.cloud.UserService.dtos.requests.UserRegistrationRequest;
-import com.cloud.UserService.dtos.requests.UserUpdateRequest;
 import com.cloud.UserService.dtos.responses.AuthResponse;
 import com.cloud.UserService.dtos.responses.UserResponse;
+import com.cloud.UserService.entities.Role;
 import com.cloud.UserService.entities.User;
 import com.cloud.UserService.events.UserRegisteredEvent;
 import com.cloud.UserService.exceptions.UserAlreadyExistsException;
 import com.cloud.UserService.exceptions.UserNotFoundException;
 import com.cloud.UserService.repositories.UserRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -24,7 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -37,14 +38,21 @@ public class UserService {
     private final UserDetailsService userDetailsService;
     private final RabbitTemplate rabbitTemplate;
 
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll().stream().map(this::mapToUserResponse).toList();
+    }
+
     @Transactional
     public AuthResponse register(UserRegistrationRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new UserAlreadyExistsException("Username already taken: " + request.getUsername());
         }
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UserAlreadyExistsException("Email already registered: " + request.getEmail());
         }
+
+        Role role = request.getRole() != null ? request.getRole() : Role.USER;
 
         User user = User.builder()
                 .username(request.getUsername())
@@ -52,6 +60,7 @@ public class UserService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
+                .role(role)
                 .build();
 
         user = userRepository.save(user);
@@ -96,10 +105,50 @@ public class UserService {
     }
 
     public UserResponse getUserByUsername(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+        return mapToUserResponse(userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username)));
+    }
 
-        return mapToUserResponse(user);
+    @Transactional
+    public UserResponse updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = findUserOrThrow(userId);
+
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail()))
+                throw new UserAlreadyExistsException("Email already in use: " + request.getEmail());
+
+            user.setEmail(request.getEmail());
+        }
+
+        if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
+        if (request.getLastName() != null) user.setLastName(request.getLastName());
+
+        if (request.getNewPassword() != null) {
+            if (request.getCurrentPassword() == null ||
+                    !passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                throw new BadCredentialsException("Current password is incorrect");
+            }
+
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+            log.info("Password changed for user: {}", user.getUsername());
+        }
+
+        return mapToUserResponse(userRepository.save(user));
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+        User user = findUserOrThrow(userId);
+
+        user.setEnabled(false);
+
+        userRepository.save(user);
+    }
+
+    private User findUserOrThrow(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + id));
     }
 
     private void publishUserRegisteredEvent(User user) {
@@ -134,29 +183,5 @@ public class UserService {
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .build();
-    }
-
-    public void deleteUserById(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException("User does not exist");
-        }
-        userRepository.deleteById(id);
-    }
-
-    public UserResponse updateUserById(Long id, UserUpdateRequest request) {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException("User does not exist");
-        }
-
-        Optional<User> user = userRepository.findById(id);
-
-        user.get().setUsername(request.getUsername());
-        user.get().setEmail(request.getEmail());
-        user.get().setPassword(request.getPassword());
-        user.get().setFirstName(request.getFirstName());
-        user.get().setLastName(request.getLastName());
-        log.info("user updated: {}", user.get().getUsername());
-
-        return mapToUserResponse(userRepository.save(user.get()));
     }
 }

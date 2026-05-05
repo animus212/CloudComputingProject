@@ -1,16 +1,17 @@
 package com.cloud.UserService.controllers;
 
-import com.cloud.UserService.dtos.requests.UserUpdateRequest;
+import com.cloud.UserService.dtos.requests.UpdateProfileRequest;
 import com.cloud.UserService.dtos.responses.UserResponse;
 import com.cloud.UserService.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -24,31 +25,32 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #userDetails.username == @userService.getUserById(#id).username")
-    public ResponseEntity<UserResponse> getUserById(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #userDetails.username == @userService.getUserById(#id).username")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUserById(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        userService.deleteUserById(id);
+    @GetMapping
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #userDetails.username == @userService.getUserById(#id).username")
-    public ResponseEntity updateUserById(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody UserUpdateRequest request
-            ) {
-       return ResponseEntity.ok( userService.updateUserById(id, request));
+    @PutMapping("/me")
+    public ResponseEntity<UserResponse> updateProfile(
+            @Valid @RequestBody UpdateProfileRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UserResponse current = userService.getUserByUsername(userDetails.getUsername());
+
+        return ResponseEntity.ok(userService.updateProfile(current.getId(), request));
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteAccount(@AuthenticationPrincipal UserDetails userDetails) {
+        UserResponse current = userService.getUserByUsername(userDetails.getUsername());
+
+        userService.deleteUser(current.getId());
+
+        return ResponseEntity.noContent().build();
     }
 }

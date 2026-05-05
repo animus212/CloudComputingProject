@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +61,11 @@ public class EventService {
                 .map(this::mapToResponse);
     }
 
+    public List<EventResponse> getOrganizerEvents(Long organizerId) {
+        return eventRepository.findByOrganizerId(organizerId).stream()
+                .map(this::mapToResponse).toList();
+    }
+
     public EventResponse getEventById(Long id) {
         return mapToResponse(findEventOrThrow(id));
     }
@@ -67,10 +73,7 @@ public class EventService {
     @Transactional
     public EventResponse updateEvent(Long id, UpdateEventRequest request, Long requesterId) {
         Event event = findEventOrThrow(id);
-
-        if (!event.getOrganizerId().equals(requesterId)) {
-            throw new SecurityException("Only the organizer can update this event");
-        }
+        assertOrganizer(event, requesterId);
 
         if (request.getTitle() != null) event.setTitle(request.getTitle());
         if (request.getDescription() != null) event.setDescription(request.getDescription());
@@ -82,6 +85,52 @@ public class EventService {
         if (request.getStatus() != null) event.setStatus(request.getStatus());
 
         return mapToResponse(eventRepository.save(event));
+    }
+
+    @Transactional
+    public EventResponse publishEvent(Long id, Long requesterId) {
+        Event event = findEventOrThrow(id);
+        assertOrganizer(event, requesterId);
+
+        if (event.getStatus() != EventStatus.DRAFT)
+            throw new IllegalStateException("Only DRAFT events can be published");
+
+        event.setStatus(EventStatus.PUBLISHED);
+        log.info("Event published: id={}", id);
+        return mapToResponse(eventRepository.save(event));
+    }
+
+    @Transactional
+    public EventResponse cancelEvent(Long id, Long requesterId) {
+        Event event = findEventOrThrow(id);
+        assertOrganizer(event, requesterId);
+
+        if (event.getStatus() == EventStatus.CANCELLED)
+            throw new IllegalStateException("Event is already cancelled");
+
+        if (event.getStatus() == EventStatus.COMPLETED)
+            throw new IllegalStateException("Cannot cancel a completed event");
+
+        event.setStatus(EventStatus.CANCELLED);
+        log.info("Event cancelled: id={}", id);
+
+        // TODO: publish EventCancelledEvent so notification-service can
+        // email all registered participants
+        return mapToResponse(eventRepository.save(event));
+    }
+
+    @Transactional
+    public void deleteEvent(Long id, Long requesterId) {
+        Event event = findEventOrThrow(id);
+        assertOrganizer(event, requesterId);
+
+        if (event.getStatus() == EventStatus.PUBLISHED && event.getRegisteredCount() > 0)
+            throw new IllegalStateException(
+                    "Cannot delete a published event with active registrations. Cancel it first."
+            );
+
+        eventRepository.delete(event);
+        log.info("Event deleted: id={}, by={}", id, requesterId);
     }
 
     @Transactional
@@ -116,8 +165,13 @@ public class EventService {
     }
 
     private Event findEventOrThrow(Long id) {
-        return eventRepository.findById(id)
-                .orElseThrow(() -> new EventNotFoundException("Event not found: " + id));
+        return eventRepository.findById(id).orElseThrow(() -> new EventNotFoundException("Event not found: " + id));
+    }
+
+    private void assertOrganizer(Event event, Long requesterId) {
+        if (!event.getOrganizerId().equals(requesterId)) {
+            throw new SecurityException("Only the organizer can perform this action");
+        }
     }
 
     private void publishEventCreatedEvent(Event event) {
