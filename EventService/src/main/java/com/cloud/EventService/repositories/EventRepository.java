@@ -18,7 +18,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     List<Event> findByOrganizerId(Long organizerId);
 
-    List<Event> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
+    List<Event> findByStartDateBetween(LocalDateTime start, LocalDateTime end);
 
     @Modifying
     @Query("UPDATE Event e SET e.registeredCount = e.registeredCount + 1 WHERE e.id = :id AND e.registeredCount < e.capacity")

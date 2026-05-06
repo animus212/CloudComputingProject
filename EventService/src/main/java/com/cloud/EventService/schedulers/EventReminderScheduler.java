@@ -27,7 +27,7 @@ public class EventReminderScheduler {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime reminderTime = now.plusDays(1);
 
-        List<Event> events = eventRepository.findByStartTimeBetween(now, reminderTime);
+        List<Event> events = eventRepository.findByStartDateBetween(now, reminderTime);
 
         for (Event event : events) {
             EventReminderEvent reminderEvent = new EventReminderEvent(
