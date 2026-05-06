@@ -7,7 +7,7 @@ import com.cloud.EventService.dtos.responses.EventResponse;
 import com.cloud.EventService.dtos.responses.EventSummaryDto;
 import com.cloud.EventService.entities.Event;
 import com.cloud.EventService.entities.EventStatus;
-import com.cloud.EventService.events.EventCreatedEvent;
+import com.cloud.EventService.events.EventUpdatedEvent;
 import com.cloud.EventService.exceptions.EventCapacityException;
 import com.cloud.EventService.exceptions.EventNotFoundException;
 import com.cloud.EventService.repositories.EventRepository;
@@ -51,8 +51,6 @@ public class EventService {
 
         log.info("Event created: id={}, title={}", event.getId(), event.getTitle());
 
-        publishEventCreatedEvent(event);
-
         return mapToResponse(event);
     }
 
@@ -75,16 +73,27 @@ public class EventService {
         Event event = findEventOrThrow(id);
         assertOrganizer(event, requesterId);
 
-        if (request.getTitle() != null) event.setTitle(request.getTitle());
-        if (request.getDescription() != null) event.setDescription(request.getDescription());
-        if (request.getLocation() != null) event.setLocation(request.getLocation());
-        if (request.getStartDate() != null) event.setStartDate(request.getStartDate());
-        if (request.getEndDate() != null) event.setEndDate(request.getEndDate());
-        if (request.getCapacity() != null) event.setCapacity(request.getCapacity());
-        if (request.getEventType() != null) event.setEventType(request.getEventType());
-        if (request.getStatus() != null) event.setStatus(request.getStatus());
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            throw new IllegalArgumentException("End date must be after start date");
+        }
 
-        return mapToResponse(eventRepository.save(event));
+        if (request.getCapacity() < event.getRegisteredCount()) {
+            throw new IllegalArgumentException("Capacity must not be lower than the number of registered users");
+        }
+
+        event.setTitle(request.getTitle());
+        event.setDescription(request.getDescription());
+        event.setLocation(request.getLocation());
+        event.setStartDate(request.getStartDate());
+        event.setEndDate(request.getEndDate());
+        event.setCapacity(request.getCapacity());
+        event.setEventType(request.getEventType());
+
+        event = eventRepository.save(event);
+
+        publishEventUpdatedEvent(event);
+
+        return mapToResponse(event);
     }
 
     @Transactional
@@ -96,7 +105,9 @@ public class EventService {
             throw new IllegalStateException("Only DRAFT events can be published");
 
         event.setStatus(EventStatus.PUBLISHED);
+
         log.info("Event published: id={}", id);
+
         return mapToResponse(eventRepository.save(event));
     }
 
@@ -112,11 +123,36 @@ public class EventService {
             throw new IllegalStateException("Cannot cancel a completed event");
 
         event.setStatus(EventStatus.CANCELLED);
+
+        event = eventRepository.save(event);
+
         log.info("Event cancelled: id={}", id);
 
-        // TODO: publish EventCancelledEvent so notification-service can
-        // email all registered participants
-        return mapToResponse(eventRepository.save(event));
+        publishEventUpdatedEvent(event);
+
+        return mapToResponse(event);
+    }
+
+    @Transactional
+    public EventResponse completeEvent(Long id, Long requesterId) {
+        Event event = findEventOrThrow(id);
+        assertOrganizer(event, requesterId);
+
+        if (event.getStatus() != EventStatus.PUBLISHED)
+            throw new IllegalStateException("Only PUBLISHED events can be completed");
+
+        if (event.getStartDate().isAfter(LocalDateTime.now()))
+            throw new IllegalStateException("Can not complete an event before the start date");
+
+        event.setStatus(EventStatus.COMPLETED);
+
+        event = eventRepository.save(event);
+
+        log.info("Event completed: id={}", id);
+
+        publishEventUpdatedEvent(event);
+
+        return mapToResponse(event);
     }
 
     @Transactional
@@ -130,6 +166,7 @@ public class EventService {
             );
 
         eventRepository.delete(event);
+
         log.info("Event deleted: id={}, by={}", id, requesterId);
     }
 
@@ -159,7 +196,11 @@ public class EventService {
     public void releaseSpot(Long eventId) {
         findEventOrThrow(eventId);
 
-        eventRepository.decrementRegisteredCount(eventId);
+        int updated = eventRepository.decrementRegisteredCount(eventId);
+
+        if (updated == 0) {
+            throw new EventCapacityException("No spots to release for event: " + eventId);
+        }
 
         log.debug("Released spot for event: {}", eventId);
     }
@@ -174,24 +215,27 @@ public class EventService {
         }
     }
 
-    private void publishEventCreatedEvent(Event event) {
+    private void publishEventUpdatedEvent(Event event) {
         try {
-            EventCreatedEvent message = EventCreatedEvent.builder()
+            EventUpdatedEvent message = EventUpdatedEvent.builder()
                     .eventId(event.getId())
                     .title(event.getTitle())
+                    .description(event.getDescription())
                     .location(event.getLocation())
                     .startDate(event.getStartDate())
+                    .endDate(event.getEndDate())
                     .organizerId(event.getOrganizerId())
-                    .createdAt(LocalDateTime.now())
+                    .eventStatus(event.getStatus())
+                    .eventType(event.getEventType())
                     .build();
 
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.EXCHANGE_NAME,
-                    RabbitMQConfig.EVENT_CREATED_ROUTING_KEY,
+                    RabbitMQConfig.EVENT_UPDATED_ROUTING_KEY,
                     message
             );
         } catch (Exception e) {
-            log.error("Failed to publish EventCreatedEvent: {}", e.getMessage());
+            log.error("Failed to publish EventUpdatedEvent: {}", e.getMessage());
         }
     }
 

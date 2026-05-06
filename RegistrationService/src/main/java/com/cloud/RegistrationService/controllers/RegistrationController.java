@@ -1,16 +1,12 @@
 package com.cloud.RegistrationService.controllers;
 
-import com.cloud.RegistrationService.dtos.requests.CreateRegistrationRequest;
 import com.cloud.RegistrationService.dtos.response.RegistrationResponse;
 import com.cloud.RegistrationService.services.RegistrationService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,18 +17,16 @@ import java.util.List;
 public class RegistrationController {
     private final RegistrationService registrationService;
 
-    @PostMapping
+    @PostMapping("/event/{eventId}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<RegistrationResponse> register(
-            @Valid @RequestBody CreateRegistrationRequest request,
+            @PathVariable Long eventId,
             HttpServletRequest httpRequest
     ) {
         Long userId = getUserId(httpRequest);
-        String userEmail = (String) httpRequest.getAttribute("userEmail");
-        String token = extractToken(httpRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(registrationService.createRegistration(request, userId, userEmail, token));
+                .body(registrationService.createRegistration(eventId, userId));
     }
 
     @GetMapping("/my")
@@ -58,12 +52,9 @@ public class RegistrationController {
     @GetMapping("/event/{eventId}")
     @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<List<RegistrationResponse>> getEventRegistrations(
-            @PathVariable Long eventId,
-            HttpServletRequest httpRequest
+            @PathVariable Long eventId
     ) {
-        Long requesterId = getUserId(httpRequest);
-
-        return ResponseEntity.ok(registrationService.getEventRegistrations(eventId, requesterId));
+        return ResponseEntity.ok(registrationService.getEventRegistrations(eventId));
     }
 
     @DeleteMapping("/{id}")
@@ -73,22 +64,18 @@ public class RegistrationController {
             HttpServletRequest httpRequest
     ) {
         Long userId = getUserId(httpRequest);
-        String token = extractToken(httpRequest);
 
-        return ResponseEntity.ok(registrationService.cancelRegistration(id, userId, token));
+        return ResponseEntity.ok(registrationService.cancelRegistration(id, userId));
+    }
+
+    @GetMapping("/event/internal/{eventId}")
+    public ResponseEntity<List<Long>> getAllEventUsers(
+            @PathVariable Long eventId
+    ) {
+        return  ResponseEntity.ok(registrationService.getAllEventUsers(eventId));
     }
 
     private Long getUserId(HttpServletRequest request) {
         return (Long) request.getAttribute("userId");
-    }
-
-    private String extractToken(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
-
-        if (header != null && header.startsWith("Bearer ")) {
-            return header.substring(7);
-        }
-
-        return null;
     }
 }

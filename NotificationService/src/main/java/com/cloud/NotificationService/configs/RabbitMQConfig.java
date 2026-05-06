@@ -12,9 +12,8 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMQConfig {
     public static final String EXCHANGE_NAME = "event.management.exchange";
 
-    public static final String USER_REGISTERED_QUEUE = "notification.user.registered";
-    public static final String REG_CREATED_QUEUE = "notification.registration.created";
-    public static final String REG_CANCELLED_QUEUE = "notification.registration.cancelled";
+    public static final String EVENT_UPDATED_QUEUE = "notification.event.updated";
+    public static final String EVENT_REMINDER_QUEUE = "notification.event.reminder";
 
     public static final String DLX_NAME = "event.management.dlx";
     public static final String DL_QUEUE = "notification.dead.letter";
@@ -40,48 +39,33 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue userRegisteredQueue() {
-        return QueueBuilder.durable(USER_REGISTERED_QUEUE)
+    public Queue eventUpdatedQueue() {
+        return QueueBuilder.durable(EVENT_UPDATED_QUEUE)
                 .withArgument("x-dead-letter-exchange", DLX_NAME)
                 .withArgument("x-dead-letter-routing-key", DL_QUEUE)
                 .build();
     }
 
     @Bean
-    public Binding userRegisteredBinding() {
-        return BindingBuilder.bind(userRegisteredQueue())
+    public Binding eventUpdatedBinding() {
+        return BindingBuilder.bind(eventUpdatedQueue())
                 .to(eventManagementExchange())
-                .with("user.registered");
+                .with("event.updated");
     }
 
     @Bean
-    public Queue registrationCreatedQueue() {
-        return QueueBuilder.durable(REG_CREATED_QUEUE)
+    public Queue eventReminderQueue() {
+        return QueueBuilder.durable(EVENT_REMINDER_QUEUE)
                 .withArgument("x-dead-letter-exchange", DLX_NAME)
                 .withArgument("x-dead-letter-routing-key", DL_QUEUE)
                 .build();
     }
 
     @Bean
-    public Binding registrationCreatedBinding() {
-        return BindingBuilder.bind(registrationCreatedQueue())
+    public Binding eventReminderBinding() {
+        return BindingBuilder.bind(eventReminderQueue())
                 .to(eventManagementExchange())
-                .with("registration.created");
-    }
-
-    @Bean
-    public Queue registrationCancelledQueue() {
-        return QueueBuilder.durable(REG_CANCELLED_QUEUE)
-                .withArgument("x-dead-letter-exchange", DLX_NAME)
-                .withArgument("x-dead-letter-routing-key", DL_QUEUE)
-                .build();
-    }
-
-    @Bean
-    public Binding registrationCancelledBinding() {
-        return BindingBuilder.bind(registrationCancelledQueue())
-                .to(eventManagementExchange())
-                .with("registration.cancelled");
+                .with("event.reminder");
     }
 
     @Bean

@@ -120,8 +120,6 @@ services:
     depends_on:
       user-db-test:
         condition: service_healthy
-      rabbitmq-test:
-        condition: service_healthy
 
   event-service-test:
     <<: *test-java
@@ -169,8 +167,6 @@ services:
     depends_on:
       registration-db-test:
         condition: service_healthy
-      rabbitmq-test:
-        condition: service_healthy
 
   notification-service-test:
     <<: *test-java
@@ -189,8 +185,7 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      MAIL_HOST: localhost
-      MAIL_PORT: 1025
+      REGISTRATION_SERVICE_URL: ${REGISTRATION_SERVICE_URL}
     depends_on:
       notification-db-test:
         condition: service_healthy

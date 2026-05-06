@@ -33,8 +33,7 @@ public class EventController {
     ) {
         Long organizerId = getUserId(httpRequest);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(eventService.createEvent(request, organizerId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(eventService.createEvent(request, organizerId));
     }
 
     @GetMapping
@@ -82,12 +81,22 @@ public class EventController {
     @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<EventResponse> cancelEvent(
             @PathVariable Long id,
-            HttpServletRequest httpRequest,
-            Authentication auth
+            HttpServletRequest httpRequest
     ) {
         Long requesterId = getUserId(httpRequest);
 
         return ResponseEntity.ok(eventService.cancelEvent(id, requesterId));
+    }
+
+    @PatchMapping("/{id}/complete")
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public ResponseEntity<EventResponse> completeEvent(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest
+    ) {
+        Long requesterId = getUserId(httpRequest);
+
+        return ResponseEntity.ok(eventService.completeEvent(id, requesterId));
     }
 
     @DeleteMapping("/{id}")

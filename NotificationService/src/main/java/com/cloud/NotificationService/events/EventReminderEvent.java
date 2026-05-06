@@ -1,4 +1,4 @@
-package com.cloud.EventService.events;
+package com.cloud.NotificationService.events;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,11 +12,8 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EventCreatedEvent implements Serializable {
+public class EventReminderEvent implements Serializable {
     private Long eventId;
     private String title;
-    private String location;
     private LocalDateTime startDate;
-    private Long organizerId;
-    private LocalDateTime createdAt;
 }

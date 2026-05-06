@@ -1,6 +1,5 @@
 package com.cloud.UserService.services;
 
-import com.cloud.UserService.configs.RabbitMQConfig;
 import com.cloud.UserService.dtos.requests.LoginRequest;
 import com.cloud.UserService.dtos.requests.UpdateProfileRequest;
 import com.cloud.UserService.dtos.requests.UserRegistrationRequest;
@@ -8,13 +7,11 @@ import com.cloud.UserService.dtos.responses.AuthResponse;
 import com.cloud.UserService.dtos.responses.UserResponse;
 import com.cloud.UserService.entities.Role;
 import com.cloud.UserService.entities.User;
-import com.cloud.UserService.events.UserRegisteredEvent;
 import com.cloud.UserService.exceptions.UserAlreadyExistsException;
 import com.cloud.UserService.exceptions.UserNotFoundException;
 import com.cloud.UserService.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,9 +20,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -36,11 +30,6 @@ public class UserService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
-    private final RabbitTemplate rabbitTemplate;
-
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream().map(this::mapToUserResponse).toList();
-    }
 
     @Transactional
     public AuthResponse register(UserRegistrationRequest request) {
@@ -67,10 +56,8 @@ public class UserService {
 
         log.info("New user registered: {}", user.getUsername());
 
-        publishUserRegisteredEvent(user);
-
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-        String token = jwtService.generateToken(userDetails, user.getId(), user.getRole().name(), user.getEmail());
+        String token = jwtService.generateToken(userDetails, user.getId(), user.getRole().name());
 
         return AuthResponse.builder()
                 .token(token)
@@ -88,7 +75,7 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + request.getUsername()));
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-        String token = jwtService.generateToken(userDetails, user.getId(), user.getRole().name(), user.getEmail());
+        String token = jwtService.generateToken(userDetails, user.getId(), user.getRole().name());
 
         return AuthResponse.builder()
                 .token(token)
@@ -98,10 +85,7 @@ public class UserService {
     }
 
     public UserResponse getUserById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
-
-        return mapToUserResponse(user);
+        return mapToUserResponse(findUserOrThrow(id));
     }
 
     public UserResponse getUserByUsername(String username) {
@@ -149,28 +133,6 @@ public class UserService {
     private User findUserOrThrow(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + id));
-    }
-
-    private void publishUserRegisteredEvent(User user) {
-        try {
-            UserRegisteredEvent event = UserRegisteredEvent.builder()
-                    .userId(user.getId())
-                    .username(user.getUsername())
-                    .email(user.getEmail())
-                    .firstName(user.getFirstName())
-                    .registeredAt(LocalDateTime.now())
-                    .build();
-
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.EXCHANGE_NAME,
-                    RabbitMQConfig.USER_REGISTERED_ROUTING_KEY,
-                    event
-            );
-
-            log.debug("Published UserRegisteredEvent for user: {}", user.getUsername());
-        } catch (Exception e) {
-            log.error("Failed to publish UserRegisteredEvent: {}", e.getMessage());
-        }
     }
 
     private UserResponse mapToUserResponse(User user) {

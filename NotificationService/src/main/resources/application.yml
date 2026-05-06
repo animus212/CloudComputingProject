@@ -16,6 +16,10 @@ server:
 jwt:
   secret: ${JWT_SECRET}
 
+services:
+  registration-service:
+    base-url: ${REGISTRATION_SERVICE_URL:http://registration-service:8083}
+
 logging:
   level:
     com.eventmgmt: INFO

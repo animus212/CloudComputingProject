@@ -11,7 +11,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
     public static final String EXCHANGE_NAME = "event.management.exchange";
-    public static final String EVENT_CREATED_ROUTING_KEY = "event.created";
+    public static final String EVENT_UPDATED_ROUTING_KEY = "event.updated";
+    public static final String EVENT_REMINDER_ROUTING_KEY = "event.reminder";
 
     @Bean
     public TopicExchange eventManagementExchange() {

@@ -61,10 +61,6 @@ public class Event {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public boolean hasAvailableCapacity() {
-        return registeredCount < capacity;
-    }
-
     public int getAvailableSpots() {
         return capacity - registeredCount;
     }

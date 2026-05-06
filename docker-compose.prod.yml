@@ -144,8 +144,6 @@ services:
     depends_on:
       user-db-prod:
         condition: service_healthy
-      rabbitmq-prod:
-        condition: service_healthy
 
   event-service:
     <<: *prod-java
@@ -197,8 +195,6 @@ services:
     depends_on:
       registration-db-prod:
         condition: service_healthy
-      rabbitmq-prod:
-        condition: service_healthy
 
   notification-service:
     <<: *prod-java
@@ -217,10 +213,7 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      MAIL_HOST: ${MAIL_HOST}
-      MAIL_PORT: ${MAIL_PORT}
-      MAIL_USER: ${MAIL_USER}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      REGISTRATION_SERVICE_URL: ${REGISTRATION_SERVICE_URL}
       SERVER_PORT: 8084
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     depends_on:

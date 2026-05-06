@@ -116,13 +116,6 @@ services:
     volumes:
       - notification-db-dev-data:/var/lib/postgresql/data
 
-  mailhog:
-    <<: *service-common
-    image: mailhog/mailhog:latest
-    container_name: mailhog-dev
-    ports:
-      - "${MAILHOG_UI_PORT:-8025}:8025"
-
   user-service:
     <<: *java-service
     container_name: user-service-dev
@@ -138,8 +131,6 @@ services:
       JAVA_OPTS: "-XX:+UseContainerSupport -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     depends_on:
       user-db:
-        condition: service_healthy
-      rabbitmq:
         condition: service_healthy
     ports:
       - "5005:5005"
@@ -182,8 +173,6 @@ services:
     depends_on:
       registration-db:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
       event-service:
         condition: service_started
     ports:
@@ -201,10 +190,7 @@ services:
       DB_USER: ${NOTIFICATION_DB_USER}
       DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
       SERVER_PORT: 8084
-      MAIL_HOST: mailhog
-      MAIL_PORT: 1025
-      MAIL_USER: ""
-      MAIL_PASSWORD: ""
+      REGISTRATION_SERVICE_URL: ${REGISTRATION_SERVICE_URL}
       JAVA_OPTS: "-XX:+UseContainerSupport -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008"
     depends_on:
       notification-db:

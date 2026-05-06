@@ -9,11 +9,6 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USER:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
 
 logging:
   level:

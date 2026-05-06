@@ -1,8 +1,7 @@
 package com.cloud.NotificationService.listeners;
 
-import com.cloud.NotificationService.events.RegistrationCancelledEvent;
-import com.cloud.NotificationService.events.RegistrationCreatedEvent;
-import com.cloud.NotificationService.events.UserRegisteredEvent;
+import com.cloud.NotificationService.events.EventReminderEvent;
+import com.cloud.NotificationService.events.EventUpdatedEvent;
 import com.cloud.NotificationService.services.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,53 +14,27 @@ import org.springframework.stereotype.Component;
 public class NotificationEventListener {
     private final NotificationService notificationService;
 
-    @RabbitListener(queues = "#{@userRegisteredQueue.name}")
-    public void handleUserRegistered(UserRegisteredEvent event) {
-        log.info("Received UserRegisteredEvent for user: {}", event.getUserId());
+    @RabbitListener(queues = "#{@eventUpdatedQueue.name}")
+    public void handleEventUpdated(EventUpdatedEvent event) {
+        log.info("Received EventUpdatedEvent for event: {}", event.getEventId());
 
         try {
-            notificationService.sendWelcomeNotification(
-                    event.getUserId(),
-                    event.getEmail(),
-                    event.getFirstName()
-            );
+            notificationService.createEventUpdatedNotification(event);
         } catch (Exception e) {
-            log.error("Error processing UserRegisteredEvent: {}", e.getMessage());
+            log.error("Error processing EventUpdatedEvent: {}", e.getMessage());
 
             throw e;
         }
     }
 
-    @RabbitListener(queues = "#{@registrationCreatedQueue.name}")
-    public void handleRegistrationCreated(RegistrationCreatedEvent event) {
-        log.info("Received RegistrationCreatedEvent: reg={}", event.getRegistrationId());
+    @RabbitListener(queues = "#{@eventReminderQueue.name}")
+    public void handleEventReminder(EventReminderEvent event) {
+        log.info("Received EventReminderEvent for event: {}", event.getEventId());
 
         try {
-            notificationService.sendRegistrationConfirmation(
-                    event.getUserId(),
-                    event.getUserEmail(),
-                    event.getEventTitle(),
-                    event.getRegisteredAt()
-            );
+            notificationService.createEventReminderNotification(event);
         } catch (Exception e) {
-            log.error("Error processing RegistrationCreatedEvent: {}", e.getMessage());
-
-            throw e;
-        }
-    }
-
-    @RabbitListener(queues = "#{@registrationCancelledQueue.name}")
-    public void handleRegistrationCancelled(RegistrationCancelledEvent event) {
-        log.info("Received RegistrationCancelledEvent: reg={}", event.getRegistrationId());
-
-        try {
-            notificationService.sendCancellationNotification(
-                    event.getUserId(),
-                    event.getUserEmail(),
-                    event.getEventTitle()
-            );
-        } catch (Exception e) {
-            log.error("Error processing RegistrationCancelledEvent: {}", e.getMessage());
+            log.error("Error processing EventReminderEvent: {}", e.getMessage());
 
             throw e;
         }

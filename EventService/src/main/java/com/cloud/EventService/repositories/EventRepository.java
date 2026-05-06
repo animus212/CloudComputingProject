@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -16,6 +17,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Page<Event> findByStatus(EventStatus status, Pageable pageable);
 
     List<Event> findByOrganizerId(Long organizerId);
+
+    List<Event> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
 
     @Modifying
     @Query("UPDATE Event e SET e.registeredCount = e.registeredCount + 1 WHERE e.id = :id AND e.registeredCount < e.capacity")
