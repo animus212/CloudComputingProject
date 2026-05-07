@@ -108,7 +108,7 @@
                 btn.disabled = true;
                 btn.textContent = 'Registering...';
                 try {
-                    await api('/api/registrations', 'POST', { eventId });
+                    await api(`/api/registrations/event/${eventId}`, 'POST');
                     btn.textContent = 'Registered';
                     btn.className = 'btn-success';
                     loadEvents(currentPage);
