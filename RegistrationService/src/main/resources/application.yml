@@ -19,3 +19,12 @@ jwt:
 services:
   event-service:
     base-url: ${EVENT_SERVICE_URL:http://event-service:8082}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

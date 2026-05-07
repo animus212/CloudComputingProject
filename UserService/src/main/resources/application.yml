@@ -22,3 +22,12 @@ jwt:
 logging:
   level:
     com.eventmgmt: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

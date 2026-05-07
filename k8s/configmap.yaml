@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: event-management
+
+data:
+  RABBITMQ_HOST: rabbitmq
+
+  USER_SERVICE_URL: http://user-service:8081
+  EVENT_SERVICE_URL: http://event-service:8082
+  REGISTRATION_SERVICE_URL: http://registration-service:8083
+  NOTIFICATION_SERVICE_URL: http://notification-service:8084
+
+  DB_PORT: "5432"
+
+  SPRING_PROFILES_ACTIVE: prod

@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: event-management-ingress
+  namespace: event-management
+spec:
+  ingressClassName: nginx
+
+  rules:
+    - host: event-management.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service
+                port:
+                  number: 80

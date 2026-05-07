@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registration-service
+  namespace: event-management
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: registration-service
+  template:
+    metadata:
+      labels:
+        app: registration-service
+    spec:
+      containers:
+        - name: registration-service
+          image: eventmgmt/registration-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8083
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: DB_HOST
+              value: registration_db
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: registration_db
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: POSTGRES_PASSWORD
