@@ -25,6 +25,10 @@
             </div>
 
             <div id="tab-notifications" class="tab-content hidden">
+                <div id="notif-actions" class="hidden" style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 15px;">
+                    <button class="btn-outline btn-sm" onclick="markAllRead()">Mark All as Read</button>
+                    <button class="btn-danger btn-sm" onclick="clearNotifications()">Clear All</button>
+                </div>
                 <div id="notif-list">
                     <div class="loading">Loading notifications...</div>
                 </div>
@@ -93,7 +97,7 @@
                     container.innerHTML = data.map(reg => `
                         <div class="card registration-card ${reg.status === 'CANCELLED' ? 'muted' : ''}">
                             <div class="card-header">
-                                <h3>${reg.eventTitle}</h3>
+                                <h3>${escapeHTML(reg.eventTitle)}</h3>
                                 ${statusBadge(reg.status)}
                             </div>
                             <p>Registered: ${formatDate(reg.registeredAt)}</p>
@@ -129,22 +133,53 @@
 
                     if (data.length === 0) {
                         container.innerHTML = '<p class="empty-state">No notifications.</p>';
+                        document.getElementById('notif-actions').classList.add('hidden');
                         return;
                     }
 
+                    document.getElementById('notif-actions').classList.remove('hidden');
+
                     container.innerHTML = data.map(n => `
-                        <div class="card notif-card ${n.status === 'FAILED' ? 'failed' : ''}">
+                        <div class="card notif-card ${n.status === 'FAILED' ? 'failed' : ''}" style="${n.read ? 'opacity: 0.6;' : 'border-left: 4px solid var(--accent);'}">
                             <div class="card-header">
-                                <strong>${n.subject}</strong>
-                                ${statusBadge(n.status)}
+                                <strong>${escapeHTML(n.type.replace('_', ' '))}</strong>
+                                ${!n.read ? `<button class="btn-outline btn-sm" onclick="markRead(${n.id})">Mark Read</button>` : '<span>Read</span>'}
                             </div>
-                            <p>${n.message}</p>
+                            <p>${escapeHTML(n.message)}</p>
                             <small>${formatDate(n.createdAt)}</small>
                         </div>
                     `).join('');
                 } catch (err) {
                     document.getElementById('notif-list').innerHTML =
                         `<p class="empty-state">Could not load notifications.</p>`;
+                }
+            }
+
+            async function markRead(id) {
+                try {
+                    await api(`/api/notifications/${id}/read`, 'PUT');
+                    loadNotifications();
+                } catch (err) {
+                    alert('Failed to mark as read: ' + err.message);
+                }
+            }
+
+            async function markAllRead() {
+                try {
+                    await api('/api/notifications/read-all', 'PUT');
+                    loadNotifications();
+                } catch (err) {
+                    alert('Failed to update notifications: ' + err.message);
+                }
+            }
+
+            async function clearNotifications() {
+                if(!confirm("Clear all notifications?")) return;
+                try {
+                    await api('/api/notifications/clear', 'DELETE');
+                    loadNotifications();
+                } catch (err) {
+                    alert('Failed to clear notifications: ' + err.message);
                 }
             }
 
@@ -181,6 +216,11 @@
                 try {
                     await api('/api/users/me', 'PUT', body);
                     showSuccess('profile-success', 'Profile updated successfully!');
+                    const user = Auth.getUser();
+                    user.firstName = firstName;
+                    user.lastName = lastName;
+                    Auth.setUser(user);
+                    buildNav('dashboard');
                 } catch (err) {
                     showError('profile-error', err.message);
                 } finally {

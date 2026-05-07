@@ -1,71 +1,104 @@
-<!DOCTYPE html>
-<html lang="en">
+    <!DOCTYPE html>
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Register</title>
-        <link rel="stylesheet" href="style.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Register - Event Management</title>
+        <link rel="stylesheet" href="/style.css">
     </head>
     <body>
-        <nav id="nav"></nav>
+        <nav id="nav" class="navbar"></nav>
 
-        <div class="auth-container">
-            <div class="auth-card">
-                <h1>Create Account</h1>
-                <div id="error" class="alert alert-error hidden"></div>
-                <div id="success" class="alert alert-success hidden"></div>
-
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="username" placeholder="Choose a username">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="email" placeholder="your@email.com">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="password" placeholder="At least 8 characters">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>First Name</label>
-                        <input type="text" id="firstName" placeholder="First name">
+        <div class="container auth-container">
+            <div class="card form-card">
+                <h2>Create an Account</h2>
+                <div id="error-msg" class="alert alert-danger hidden"></div>
+                
+                <form id="registerForm" onsubmit="handleRegister(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" required placeholder="John">
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" required placeholder="Doe">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Last Name</label>
-                        <input type="text" id="lastName" placeholder="Last name">
-                    </div>
-                </div>
-                <button class="btn-primary btn-full" id="regBtn" data-label="Create Account" onclick="doRegister()">
-                    Create Account
-                </button>
 
-                <p class="auth-link">Already have an account? <a href="/login.html">Login</a></p>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" required placeholder="john@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required placeholder="Min. 8 characters">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">I want to...</label>
+                        <select id="role" required>
+                            <option value="USER">Attend Events (User)</option>
+                            <option value="ORGANIZER">Host Events (Organizer)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="btn-primary w-100" data-label="Create Account">
+                        Create Account
+                    </button>
+                </form>
+                <p class="auth-footer">Already have an account? <a href="/login.html">Log in here</a></p>
             </div>
         </div>
 
-        <script src="app.js"></script>
+        <script src="/app.js"></script>
         <script>
             buildNav();
+            
+            // Redirect if already logged in
+            if (Auth.isLoggedIn()) {
+                window.location.href = '/dashboard.html';
+            }
 
-            async function doRegister() {
-                hideError('error');
-                setLoading('regBtn', true);
+            async function handleRegister(e) {
+                e.preventDefault();
+                hideError('error-msg');
+                setLoading('submitBtn', true);
+
+                const payload = {
+                    firstName: document.getElementById('firstName').value.trim(),
+                    lastName: document.getElementById('lastName').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    password: document.getElementById('password').value,
+                    role: document.getElementById('role').value
+                };
 
                 try {
-                    const data = await api('/api/auth/register', 'POST', {
-                        username: document.getElementById('username').value,
-                        email: document.getElementById('email').value,
-                        password: document.getElementById('password').value,
-                        firstName: document.getElementById('firstName').value,
-                        lastName: document.getElementById('lastName').value
+                    // 1. Register the user
+                    await api('/api/users/register', 'POST', payload);
+                    
+                    // 2. Automatically log them in after successful registration
+                    const loginData = await api('/api/users/login', 'POST', {
+                        email: payload.email,
+                        password: payload.password
                     });
-                    Auth.setToken(data.token);
-                    Auth.setUser(data.user);
-                    window.location.href = '/dashboard.html';
+
+                    Auth.setToken(loginData.token);
+
+                    // 3. Fetch their profile to store in local storage
+                    const userProfile = await api('/api/users/me');
+                    Auth.setUser(userProfile);
+
+                    // 4. Redirect based on the newly selected role
+                    if (userProfile.role === 'ORGANIZER') {
+                        window.location.href = '/organizer.html';
+                    } else {
+                        window.location.href = '/dashboard.html';
+                    }
                 } catch (err) {
-                    showError('error', err.message);
-                    setLoading('regBtn', false);
+                    showError('error-msg', err.message);
+                    setLoading('submitBtn', false);
                 }
             }
         </script>
