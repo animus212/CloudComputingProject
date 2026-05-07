@@ -22,7 +22,7 @@ public class RegistrationServiceClient {
 
     public List<Long> getAllEventUsers(Long eventId) {
         try {
-            return webClient.post()
+            return webClient.get()
                     .uri("/api/registrations/event/internal/{eventId}", eventId)
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<List<Long>>() {})

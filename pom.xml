@@ -20,7 +20,8 @@
 
     <properties>
         <java.version>21</java.version>
-        <spring-boot.version>4.0.5</spring-boot.version> </properties>
+        <spring-boot.version>3.3.4</spring-boot.version>
+    </properties>
 
     <dependencyManagement>
         <dependencies>

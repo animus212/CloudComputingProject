@@ -22,6 +22,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final RegistrationServiceClient registrationServiceClient;
 
+    @Transactional
     public void createEventUpdatedNotification(EventUpdatedEvent event) {
         String message = String.format("""
                         The event you registered for has been updated.
@@ -44,6 +45,7 @@ public class NotificationService {
         createNotifications(event.getEventId(), message, NotificationType.EVENT_UPDATED);
     }
 
+    @Transactional
     public void createEventReminderNotification(EventReminderEvent event) {
         String message = String.format("""
                         Your event is starting soon:
@@ -97,7 +99,6 @@ public class NotificationService {
         return registrationServiceClient.getAllEventUsers(eventId);
     }
 
-    @Transactional
     private void createNotifications(Long eventId, String message, NotificationType type) {
         List<Notification> notifications = getAllEventUsers(eventId).stream()
                 .map(userId -> Notification.builder()

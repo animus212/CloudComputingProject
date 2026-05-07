@@ -113,10 +113,6 @@ services:
       SERVER_PORT: 8081
       SPRING_PROFILES_ACTIVE: test
       JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_HOST: rabbitmq-test
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
     depends_on:
       user-db-test:
         condition: service_healthy
@@ -159,10 +155,6 @@ services:
       SERVER_PORT: 8083
       SPRING_PROFILES_ACTIVE: test
       JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_HOST: rabbitmq-test
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       EVENT_SERVICE_URL: http://event-service-test:8082
     depends_on:
       registration-db-test:

@@ -184,11 +184,13 @@ public class EventService {
             throw new EventCapacityException("No available spots for event: " + eventId);
         }
 
+        Event refreshed = findEventOrThrow(eventId);
+
         return EventSummaryDto.builder()
                 .id(event.getId())
                 .title(event.getTitle())
                 .available(true)
-                .availableSpots(event.getAvailableSpots() - 1)
+                .availableSpots(refreshed.getAvailableSpots())
                 .build();
     }
 

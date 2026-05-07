@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -22,9 +23,9 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Modifying
     @Query("UPDATE Event e SET e.registeredCount = e.registeredCount + 1 WHERE e.id = :id AND e.registeredCount < e.capacity")
-    int incrementRegisteredCount(Long id);
+    int incrementRegisteredCount(@Param("id") Long id);
 
     @Modifying
     @Query("UPDATE Event e SET e.registeredCount = e.registeredCount - 1 WHERE e.id = :id AND e.registeredCount > 0")
-    int decrementRegisteredCount(Long id);
+    int decrementRegisteredCount(@Param("id") Long id);
 }
