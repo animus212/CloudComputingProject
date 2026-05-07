@@ -25,6 +25,19 @@ const Auth = {
     }
 };
 
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag] || tag)
+    );
+}
+
 async function api(endpoint, method = 'GET', body = null) {
     const headers = { 'Content-Type': 'application/json' };
     const token = Auth.getToken();
@@ -36,10 +49,17 @@ async function api(endpoint, method = 'GET', body = null) {
         body: body ? JSON.stringify(body) : null
     });
 
+    if (res.status === 401 || res.status === 403) {
+        Auth.logout();
+        throw new Error('Session expired. Please log in again.');
+    }
+
     if (res.status === 204) return null;
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || data.message || 'Request failed');
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+    
+    if (!res.ok) throw new Error((data && (data.detail || data.message)) || 'Request failed');
     return data;
 }
 
@@ -86,7 +106,7 @@ function statusBadge(status) {
         SENT: 'badge-published',
         FAILED: 'badge-cancelled'
     };
-    return `<span class="badge ${colors[status] || ''}">${status}</span>`;
+    return `<span class="badge ${colors[status] || ''}">${escapeHTML(status)}</span>`;
 }
 
 function buildNav(activePage = '') {
@@ -109,8 +129,8 @@ function buildNav(activePage = '') {
             <div class="nav-left">${links}</div>
             <div class="nav-right">
                 <span class="nav-user">
-                    ${user.firstName || user.username}
-                    <span class="role-badge">${user.role}</span>
+                    ${escapeHTML(user.firstName || user.username)}
+                    <span class="role-badge">${escapeHTML(user.role)}</span>
                 </span>
                 <button class="btn-danger btn-sm" onclick="Auth.logout()">Logout</button>
             </div>

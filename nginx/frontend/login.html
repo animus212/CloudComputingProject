@@ -33,7 +33,7 @@
         <script src="app.js"></script>
         <script>
             buildNav();
-            if (Auth.isLoggedIn()) window.location.href = '/';
+            if (Auth.isLoggedIn()) window.location.href = Auth.isOrganizer() ? '/organizer.html' : '/dashboard.html';
 
             async function doLogin() {
                 hideError('error');
