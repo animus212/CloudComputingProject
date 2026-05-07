@@ -5,7 +5,7 @@ metadata:
   namespace: event-management
 
 data:
-  nginx.prod.conf: |
+  nginx.dev.conf: |
     events {}
 
     http {
@@ -29,20 +29,20 @@ data:
       server {
           listen 80;
 
-          location /api/users/ {
-              proxy_pass http://user_service/;
+          location /api/users {
+              proxy_pass http://user_service;
           }
 
-          location /api/events/ {
-              proxy_pass http://event_service/;
+          location /api/events {
+              proxy_pass http://event_service;
           }
 
-          location /api/registrations/ {
-              proxy_pass http://registration_service/;
+          location /api/registrations {
+              proxy_pass http://registration_service;
           }
 
-          location /api/notifications/ {
-              proxy_pass http://notification_service/;
+          location /api/notifications {
+              proxy_pass http://notification_service;
           }
       }
     }

@@ -15,19 +15,19 @@ spec:
     spec:
       containers:
         - name: event-service
-          image: eventmgmt/event-service:latest
+          image: event-service:latest
           imagePullPolicy: Never
           ports:
             - containerPort: 8082
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: prod
+              value: dev
             - name: DB_HOST
               value: event-db
             - name: DB_PORT
               value: "5432"
             - name: DB_NAME
-              value: event-db
+              value: event_db
             - name: DB_USER
               value: postgres
             - name: DB_PASSWORD

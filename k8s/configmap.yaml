@@ -3,6 +3,15 @@ kind: ConfigMap
 metadata:
   name: app-config
   namespace: event-management
+spec:
+  template:
+    spec:
+      containers:
+        - name: user-service
+          image: user-service:latest
+          envFrom:
+            - configMapRef:
+                name: app-config
 
 data:
   RABBITMQ_HOST: rabbitmq

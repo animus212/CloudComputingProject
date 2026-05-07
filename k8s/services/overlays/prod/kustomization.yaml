@@ -1,0 +1,35 @@
+resources:
+  - ../../base
+namespace: event-management
+commonLabels:
+  variant: production
+  project: event-management-app
+patches:
+  - target:
+      kind: Deployment
+      name: notification-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: prod
+  - target:
+      kind: Deployment
+      name: user-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: prod
+  - target:
+      kind: Deployment
+      name: event-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: prod
+  - target:
+      kind: Deployment
+      name: registration-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: prod

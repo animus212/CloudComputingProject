@@ -1,33 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: registration-service
+  name: notification-service
   namespace: event-management
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: registration-service
+      app: notification-service
   template:
     metadata:
       labels:
-        app: registration-service
+        app: notification-service
     spec:
       containers:
-        - name: registration-service
-          image: eventmgmt/registration-service:latest
+        - name: notification-service
+          image: notification-service:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 8083
+            - containerPort: 8084
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: prod
+              value: dev
             - name: DB_HOST
-              value: registration_db
+              value: notification-db
             - name: DB_PORT
               value: "5432"
             - name: DB_NAME
-              value: registration_db
+              value: notification_db
             - name: DB_USER
               value: postgres
             - name: DB_PASSWORD

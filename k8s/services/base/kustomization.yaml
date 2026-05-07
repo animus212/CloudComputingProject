@@ -1,0 +1,9 @@
+resources:
+  - notification-deployment.yaml
+  - notification-service.yaml
+  - event-service-deployment.yaml
+  - event-service.yaml
+  - user-service-deployment.yaml
+  - user-service.yaml
+  - registration-service-deployment.yaml
+  - registration-service.yaml

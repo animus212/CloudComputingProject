@@ -15,13 +15,13 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: eventmgmt/user-service:latest
+          image: user-service:latest
           imagePullPolicy: Never
           ports:
             - containerPort: 8081
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: prod
+              value: dev
             - name: DB_HOST
               value: user-db
             - name: DB_PORT
