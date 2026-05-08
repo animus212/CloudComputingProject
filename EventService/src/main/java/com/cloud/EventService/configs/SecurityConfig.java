@@ -29,7 +29,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/events/{id}").permitAll()
                         .requestMatchers("/api/events/{id}/reserve").permitAll()
                         .requestMatchers("/api/events/{id}/release").permitAll()
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
