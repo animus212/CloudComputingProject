@@ -215,6 +215,7 @@ services:
 
   nginx:
     container_name: nginx-prod
+    image: eventmgmt/nginx:latest
     restart: always
     networks:
       - prod-network
