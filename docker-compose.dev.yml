@@ -203,6 +203,7 @@ services:
   nginx:
     <<: *service-common
     container_name: nginx-dev
+    image: eventmgmt/nginx:latest
     build:
       context: ./nginx
       args:

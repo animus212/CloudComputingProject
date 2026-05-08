@@ -186,6 +186,7 @@ services:
 
   nginx-test:
     container_name: nginx-test
+    image: eventmgmt/nginx:latest
     networks:
       - test-network
     build:
