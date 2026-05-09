@@ -25,7 +25,8 @@ public class RegistrationService {
     @Transactional
     public RegistrationResponse createRegistration(
             Long eventId,
-            Long userId
+            Long userId,
+            String token
     ) {
         boolean alreadyRegistered = registrationRepository.existsByUserIdAndEventIdAndStatusNot(
                 userId, eventId, RegistrationStatus.CANCELLED
@@ -37,7 +38,7 @@ public class RegistrationService {
             );
         }
 
-        EventSummaryDto eventSummary = eventServiceClient.reserveSpot(eventId);
+        EventSummaryDto eventSummary = eventServiceClient.reserveSpot(eventId,token);
 
         Registration registration = Registration.builder()
                 .userId(userId)
@@ -79,7 +80,7 @@ public class RegistrationService {
     }
 
     @Transactional
-    public RegistrationResponse cancelRegistration(Long registrationId, Long userId) {
+    public RegistrationResponse cancelRegistration(Long registrationId, Long userId, String token) {
         Registration registration = findRegistrationOrThrow(registrationId);
 
         if (!registration.getUserId().equals(userId)) {
@@ -93,7 +94,7 @@ public class RegistrationService {
         registration.setStatus(RegistrationStatus.CANCELLED);
         registrationRepository.save(registration);
 
-        eventServiceClient.releaseSpot(registration.getEventId());
+        eventServiceClient.releaseSpot(registration.getEventId(), token);
 
         return mapToResponse(registration);
     }

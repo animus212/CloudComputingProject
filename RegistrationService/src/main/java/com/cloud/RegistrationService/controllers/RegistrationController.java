@@ -24,9 +24,9 @@ public class RegistrationController {
             HttpServletRequest httpRequest
     ) {
         Long userId = getUserId(httpRequest);
-
+        String token = httpRequest.getHeader("Authorization");
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(registrationService.createRegistration(eventId, userId));
+                .body(registrationService.createRegistration(eventId, userId,token));
     }
 
     @GetMapping("/my")
@@ -64,8 +64,8 @@ public class RegistrationController {
             HttpServletRequest httpRequest
     ) {
         Long userId = getUserId(httpRequest);
-
-        return ResponseEntity.ok(registrationService.cancelRegistration(id, userId));
+        String token = httpRequest.getHeader("Authorization");
+        return ResponseEntity.ok(registrationService.cancelRegistration(id, userId,token));
     }
 
     @GetMapping("/event/internal/{eventId}")

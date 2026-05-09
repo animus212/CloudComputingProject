@@ -134,6 +134,7 @@ services:
       DB_PORT: 5432
       DB_NAME: ${USER_DB_NAME}
       DB_USER: ${USER_DB_USER}
+      DB_PASSWORD: ${USER_DB_PASSWORD}
       SERVER_PORT: 8081
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     depends_on:

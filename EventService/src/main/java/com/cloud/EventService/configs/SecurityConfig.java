@@ -27,8 +27,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/events").permitAll()
                         .requestMatchers("/api/events/{id}").permitAll()
-                        .requestMatchers("/api/events/{id}/reserve").permitAll()
-                        .requestMatchers("/api/events/{id}/release").permitAll()
+//                        .requestMatchers("/api/events/{id}/reserve").permitAll()
+//                        .requestMatchers("/api/events/{id}/release").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
                         .anyRequest().authenticated()
                 )
