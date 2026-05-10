@@ -10,4 +10,5 @@ public class EventSummaryDto {
     private String title;
     private boolean available;
     private int availableSpots;
+    private Double price;
 }

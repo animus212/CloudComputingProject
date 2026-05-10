@@ -87,26 +87,36 @@
             async function loadRegistrations() {
                 try {
                     const data = await api('/api/registrations/my');
-                    const container = document.getElementById('registrations-list');
+                    const c = document.getElementById('registrations-list');
 
-                    if (data.length === 0) {
-                        container.innerHTML = '<p class="empty-state">No bookings yet. <a href="/">Browse events</a></p>';
+                    if (!data.length) {
+                        c.innerHTML = '<p class="empty-state">No bookings yet. <a href="/">Browse events</a></p>';
                         return;
                     }
 
-                    container.innerHTML = data.map(reg => `
+                    c.innerHTML = data.map(reg => `
                         <div class="card registration-card ${reg.status === 'CANCELLED' ? 'muted' : ''}">
                             <div class="card-header">
                                 <h3>${escapeHTML(reg.eventTitle)}</h3>
                                 ${statusBadge(reg.status)}
                             </div>
                             <p>Registered: ${formatDate(reg.registeredAt)}</p>
+
+
+                            ${reg.amountPaid > 0
+                                ? `<p class="payment-info">
+                                    💳 Paid: <strong>$${reg.amountPaid.toFixed(2)}</strong>
+                                    &nbsp;${reg.paymentStatus === 'REFUNDED'
+                                    ? '<span class="badge badge-cancelled">Refunded</span>'
+                                    : '<span class="badge badge-published">Completed</span>'}
+                                </p>`
+                                    : `<p class="payment-info">✅ Free event</p>`}
+
                             ${reg.status === 'CONFIRMED'
                                 ? `<button class="btn-danger btn-sm" onclick="cancelReg(${reg.id}, this)">
-                                    Cancel Booking
+                                     Cancel Booking${reg.amountPaid > 0 ? ' (Refund: $' + reg.amountPaid.toFixed(2) + ')' : ''}
                                 </button>`
-                                : ''
-                            }
+                                : ''}
                         </div>
                     `).join('');
                 } catch (err) {

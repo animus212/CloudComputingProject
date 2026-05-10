@@ -1,125 +1,252 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Events</title>
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <nav id="nav"></nav>
+<head>
+    <meta charset="UTF-8">
+    <title>Events</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav id="nav"></nav>
 
-        <div class="container">
-            <div class="page-header">
-                <h1>Upcoming Events</h1>
-                <div class="filters">
-                    <input type="text" id="search" placeholder="Search events..." oninput="filterEvents()">
-                    <select id="typeFilter" onchange="filterEvents()">
-                        <option value="">All Types</option>
-                        <option value="CONFERENCE">Conference</option>
-                        <option value="WORKSHOP">Workshop</option>
-                        <option value="SEMINAR">Seminar</option>
-                        <option value="WEBINAR">Webinar</option>
-                        <option value="MEETUP">Meetup</option>
-                    </select>
-                </div>
-            </div>
+<div class="container">
+    <div class="page-header">
+        <h1>Upcoming Events</h1>
+        <div class="filters">
+            <input type="text" id="search" placeholder="Search events..." oninput="filterEvents()">
+            <select id="typeFilter" onchange="filterEvents()">
+                <option value="">All Types</option>
+                <option value="CONFERENCE">Conference</option>
+                <option value="WORKSHOP">Workshop</option>
+                <option value="SEMINAR">Seminar</option>
+                <option value="WEBINAR">Webinar</option>
+                <option value="MEETUP">Meetup</option>
+            </select>
+        </div>
+    </div>
 
-            <div id="error" class="alert alert-error hidden"></div>
-            <div id="events" class="events-grid">
-                <div class="loading">Loading events...</div>
-            </div>
+    <div id="error" class="alert alert-error hidden"></div>
+    <div id="events" class="events-grid">
+        <div class="loading">Loading events...</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+</div>
 
-            <div class="pagination" id="pagination"></div>
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Complete Registration</h2>
+            <button class="modal-close" onclick="closePaymentModal()">✕</button>
         </div>
 
-        <script src="app.js"></script>
-        <script>
-            buildNav('home');
+        <div id="pay-error" class="alert alert-error hidden"></div>
 
-            let allEvents = [];
-            let currentPage = 0;
+        <!-- Event summary -->
+        <div class="payment-summary">
+            <p><strong>Event:</strong> <span id="pay-event-name"></span></p>
+            <p class="payment-amount">Amount due: <span id="pay-amount"></span></p>
+        </div>
 
-            async function loadEvents(page = 0) {
-                try {
-                    const data = await api(`/api/events?page=${page}&size=12`);
-                    allEvents = data.content;
-                    currentPage = page;
-                    renderEvents(allEvents);
-                    renderPagination(data);
-                } catch (err) {
-                    showError('error', err.message);
-                }
-            }
+        <!-- Card form -->
+        <div class="form-group">
+            <label>Cardholder Name</label>
+            <input type="text" id="pay-name" placeholder="John Doe">
+        </div>
+        <div class="form-group">
+            <label>Card Number</label>
+            <input type="text" id="pay-card" placeholder="1234 5678 9012 3456"
+                   maxlength="19" oninput="formatCardNumber(this)">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Expiry (MM/YY)</label>
+                <input type="text" id="pay-expiry" placeholder="MM/YY"
+                       maxlength="5" oninput="formatExpiry(this)">
+            </div>
+            <div class="form-group">
+                <label>CVV</label>
+                <input type="text" id="pay-cvv" placeholder="123" maxlength="4"
+                       oninput="this.value=this.value.replace(/\D/g,'')">
+            </div>
+        </div>
 
-            function renderEvents(events) {
-                const container = document.getElementById('events');
-                if (events.length === 0) {
-                    container.innerHTML = '<p class="empty-state">No events found.</p>';
-                    return;
-                }
+        <div class="modal-actions">
+            <button class="btn-outline" onclick="closePaymentModal()">Cancel</button>
+            <button class="btn-primary" id="payBtn" data-label="Pay & Register"
+                    onclick="confirmPayment()">Pay & Register</button>
+        </div>
+    </div>
+</div>
 
-                container.innerHTML = events.map(event => `
-                    <div class="card event-card">
-                        <div class="card-header">
-                            <span class="event-type">${event.eventType || 'EVENT'}</span>
-                            ${statusBadge(event.status)}
-                        </div>
-                        <h3>${event.title}</h3>
-                        <p class="event-desc">${event.description || ''}</p>
-                        <div class="event-meta">
-                            <span>${event.location}</span>
-                            <span>${formatDate(event.startDate)}</span>
-                            <span>${event.availableSpots} / ${event.capacity} spots</span>
-                        </div>
-                        <div class="card-actions">
-                            ${Auth.isLoggedIn()
-                                ? event.availableSpots > 0
-                                    ? `<button class="btn-primary" onclick="registerForEvent(${event.id}, this)">Register</button>`
-                                    : `<button class="btn-outline" disabled>Full</button>`
-                                : `<a href="/login.html" class="btn-outline">Login to Register</a>`
-                            }
-                        </div>
-                    </div>
-                `).join('');
-            }
+<script src="app.js"></script>
+<script>
+    buildNav('home');
 
-            function filterEvents() {
-                const search = document.getElementById('search').value.toLowerCase();
-                const type = document.getElementById('typeFilter').value;
-                const filtered = allEvents.filter(e =>
-                    (e.title.toLowerCase().includes(search) || (e.description || '').toLowerCase().includes(search)) &&
-                    (type === '' || e.eventType === type)
-                );
-                renderEvents(filtered);
-            }
+    let allEvents   = [];
+    let currentPage = 0;
+    let eventsMap   = {};           // id → event object for quick lookup
+    let pendingEventId = null;      // which event the payment modal is for
 
-            function renderPagination(data) {
-                const container = document.getElementById('pagination');
-                if (data.totalPages <= 1) { container.innerHTML = ''; return; }
+    // ── Load & render ─────────────────────────────────────────────
+    async function loadEvents(page = 0) {
+        try {
+            const data = await api(`/api/events?page=${page}&size=12`);
+            allEvents   = data.content;
+            currentPage = page;
+            eventsMap   = {};
+            allEvents.forEach(e => eventsMap[e.id] = e);
+            renderEvents(allEvents);
+            renderPagination(data);
+        } catch (err) {
+            showError('error', err.message);
+        }
+    }
 
-                let html = '';
-                for (let i = 0; i < data.totalPages; i++) {
-                    html += `<button class="${i === data.number ? 'active' : ''}" onclick="loadEvents(${i})">${i + 1}</button>`;
-                }
-                container.innerHTML = html;
-            }
+    function renderEvents(events) {
+        const c = document.getElementById('events');
+        if (!events.length) { c.innerHTML = '<p class="empty-state">No events found.</p>'; return; }
 
-            async function registerForEvent(eventId, btn) {
-                btn.disabled = true;
-                btn.textContent = 'Registering...';
-                try {
-                    await api(`/api/registrations/event/${eventId}`, 'POST');
-                    btn.textContent = 'Registered';
-                    btn.className = 'btn-success';
-                    loadEvents(currentPage);
-                } catch (err) {
-                    btn.disabled = false;
-                    btn.textContent = 'Register';
-                    alert('Registration failed: ' + err.message);
-                }
-            }
+        c.innerHTML = events.map(ev => `
+            <div class="card event-card">
+                <div class="card-header">
+                    <span class="event-type">${ev.eventType || 'EVENT'}</span>
+                    ${statusBadge(ev.status)}
+                </div>
+                <h3>${escapeHTML(ev.title)}</h3>
+                <p class="event-desc">${escapeHTML(ev.description || '')}</p>
+                <div class="event-meta">
+                    <span>📍 ${escapeHTML(ev.location)}</span>
+                    <span>🗓 ${formatDate(ev.startDate)}</span>
+                    <span>🎟 ${ev.availableSpots} / ${ev.capacity} spots</span>
+                    ${ev.price > 0
+                        ? `<span class="price-tag">💳 $${ev.price.toFixed(2)}</span>`
+                        : `<span class="price-tag free-tag">✅ Free</span>`}
+                </div>
+                <div class="card-actions">
+                    ${cardAction(ev)}
+                </div>
+            </div>
+        `).join('');
+    }
 
-            loadEvents();
-        </script>
-    </body>
+    // Role-aware button logic
+    function cardAction(ev) {
+        if (!Auth.isLoggedIn())
+            return `<a href="/login.html" class="btn-outline">Login to Register</a>`;
+
+        if (Auth.isOrganizer())
+            // Organizers create events, they don't register for them
+            return `<span class="role-note">You manage events from <a href="/organizer.html">My Events</a></span>`;
+
+        // Regular user
+        if (ev.availableSpots <= 0)
+            return `<button class="btn-outline" disabled>Sold Out</button>`;
+
+        const label = ev.price > 0
+            ? `Register ($${ev.price.toFixed(2)})`
+            : 'Register (Free)';
+        return `<button class="btn-primary" onclick="handleRegister(${ev.id})">
+                    ${label}
+                </button>`;
+    }
+
+    function handleRegister(eventId) {
+        const ev = eventsMap[eventId];
+        if (!ev) return;
+        if (ev.price > 0) {
+            openPaymentModal(ev);
+        } else {
+            registerFree(eventId);
+        }
+    }
+
+    async function registerFree(eventId) {
+        try {
+            await api(`/api/registrations/event/${eventId}`, 'POST');
+            showSuccess('error', 'Registered successfully!');  // reuse element as success
+            document.getElementById('error').className = 'alert alert-success';
+            setTimeout(() => {
+                document.getElementById('error').className = 'alert alert-success hidden';
+            }, 3000);
+            loadEvents(currentPage);
+        } catch (err) {
+            showError('error', err.message);
+        }
+    }
+
+    // ── Filter & paginate ──────────────────────────────────────────
+    function filterEvents() {
+        const q    = document.getElementById('search').value.toLowerCase();
+        const type = document.getElementById('typeFilter').value;
+        renderEvents(allEvents.filter(e =>
+            (e.title.toLowerCase().includes(q) || (e.description || '').toLowerCase().includes(q)) &&
+            (!type || e.eventType === type)
+        ));
+    }
+
+    function renderPagination(data) {
+        const c = document.getElementById('pagination');
+        if (data.totalPages <= 1) { c.innerHTML = ''; return; }
+        let html = '';
+        for (let i = 0; i < data.totalPages; i++)
+            html += `<button class="${i === data.number ? 'active' : ''}" onclick="loadEvents(${i})">${i + 1}</button>`;
+        c.innerHTML = html;
+    }
+
+    // ── Payment modal ──────────────────────────────────────────────
+    function openPaymentModal(ev) {
+        pendingEventId = ev.id;
+        document.getElementById('pay-event-name').textContent = ev.title;
+        document.getElementById('pay-amount').textContent     = `$${ev.price.toFixed(2)}`;
+        document.getElementById('pay-name').value   = '';
+        document.getElementById('pay-card').value   = '';
+        document.getElementById('pay-expiry').value = '';
+        document.getElementById('pay-cvv').value    = '';
+        hideError('pay-error');
+        document.getElementById('paymentModal').classList.remove('hidden');
+    }
+
+    function closePaymentModal() {
+        pendingEventId = null;
+        document.getElementById('paymentModal').classList.add('hidden');
+    }
+
+    async function confirmPayment() {
+        const name   = document.getElementById('pay-name').value.trim();
+        const card   = document.getElementById('pay-card').value.replace(/\s/g, '');
+        const expiry = document.getElementById('pay-expiry').value.trim();
+        const cvv    = document.getElementById('pay-cvv').value.trim();
+
+        if (!name)              { showError('pay-error', 'Cardholder name is required.'); return; }
+        if (card.length !== 16) { showError('pay-error', 'Enter a valid 16-digit card number.'); return; }
+        if (!/^\d{2}\/\d{2}$/.test(expiry)) { showError('pay-error', 'Enter expiry as MM/YY.'); return; }
+        if (cvv.length < 3)     { showError('pay-error', 'Enter a valid CVV.'); return; }
+
+        setLoading('payBtn', true);
+        try {
+            await api(`/api/registrations/event/${pendingEventId}`, 'POST');
+            closePaymentModal();
+            loadEvents(currentPage);
+        } catch (err) {
+            showError('pay-error', err.message);
+        } finally {
+            setLoading('payBtn', false);
+        }
+    }
+
+    // ── Card input helpers ─────────────────────────────────────────
+    function formatCardNumber(el) {
+        let v = el.value.replace(/\D/g, '').substring(0, 16);
+        el.value = v.replace(/(.{4})/g, '$1 ').trim();
+    }
+
+    function formatExpiry(el) {
+        let v = el.value.replace(/\D/g, '').substring(0, 4);
+        if (v.length >= 3) v = v.substring(0, 2) + '/' + v.substring(2);
+        el.value = v;
+    }
+
+    loadEvents();
+</script>
+</body>
 </html>
