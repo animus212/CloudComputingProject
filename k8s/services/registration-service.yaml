@@ -50,16 +50,16 @@ spec:
                   key: db-password
             - name: EVENT_SERVICE_URL
               value: "http://event-service:8082"
-            - name: RABBITMQ_HOST
+            - name: SPRING_RABBITMQ_HOST
               value: rabbitmq
-            - name: RABBITMQ_PORT
+            - name: SPRING_RABBITMQ_PORT
               value: "5672"
-            - name: RABBITMQ_USER
+            - name: SPRING_RABBITMQ_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: rabbitmq-user
-            - name: RABBITMQ_PASSWORD
+            - name: SPRING_RABBITMQ_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
