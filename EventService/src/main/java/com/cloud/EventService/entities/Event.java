@@ -4,13 +4,11 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "events")
-@Getter
-@Setter
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -52,6 +50,10 @@ public class Event {
     @Column(name = "event_type")
     @Enumerated(EnumType.STRING)
     private EventType eventType;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Double price = 0.0;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

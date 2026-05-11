@@ -3,10 +3,13 @@ package com.cloud.RegistrationService.services;
 import com.cloud.RegistrationService.clients.EventServiceClient;
 import com.cloud.RegistrationService.dtos.response.EventSummaryDto;
 import com.cloud.RegistrationService.dtos.response.RegistrationResponse;
+import com.cloud.RegistrationService.entities.Payment;
+import com.cloud.RegistrationService.entities.PaymentStatus;
 import com.cloud.RegistrationService.entities.Registration;
 import com.cloud.RegistrationService.entities.RegistrationStatus;
 import com.cloud.RegistrationService.exceptions.DuplicateRegistrationException;
 import com.cloud.RegistrationService.exceptions.RegistrationNotFoundException;
+import com.cloud.RegistrationService.repositories.PaymentRepository;
 import com.cloud.RegistrationService.repositories.RegistrationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,11 +24,13 @@ import java.util.List;
 public class RegistrationService {
     private final RegistrationRepository registrationRepository;
     private final EventServiceClient eventServiceClient;
+    private final PaymentRepository paymentRepository;
 
     @Transactional
     public RegistrationResponse createRegistration(
             Long eventId,
-            Long userId
+            Long userId,
+            String token
     ) {
         boolean alreadyRegistered = registrationRepository.existsByUserIdAndEventIdAndStatusNot(
                 userId, eventId, RegistrationStatus.CANCELLED
@@ -37,41 +42,54 @@ public class RegistrationService {
             );
         }
 
-        EventSummaryDto eventSummary = eventServiceClient.reserveSpot(eventId);
+        Registration registration = registrationRepository.save(
+                Registration.builder()
+                        .userId(userId)
+                        .eventId(eventId)
+                        .status(RegistrationStatus.CONFIRMED)
+                        .build()
+        );
 
-        Registration registration = Registration.builder()
-                .userId(userId)
-                .eventId(eventId)
-                .eventTitle(eventSummary.getTitle())
-                .status(RegistrationStatus.CONFIRMED)
-                .build();
 
-        registration = registrationRepository.save(registration);
+        EventSummaryDto eventSummary = eventServiceClient.reserveSpot(eventId, token);
 
+
+        registration.setEventTitle(eventSummary.getTitle());
+        registrationRepository.save(registration);
+
+
+        Payment payment = null;
+        if (eventSummary.getPrice() != null && eventSummary.getPrice() > 0) {
+            payment = paymentRepository.save(Payment.builder()
+                    .registrationId(eventSummary.getId())
+                    .userId(userId)
+                    .eventId(eventId)
+                    .amount(eventSummary.getPrice())
+                    .status(PaymentStatus.COMPLETED)
+                    .build());
+            log.info("Payment processed: ${} for registration={}", eventSummary.getPrice(), registration.getId());
+        }
         log.info("Registration created: id={}, user={}, event={}", registration.getId(), userId, eventId);
 
-        return mapToResponse(registration);
+        return mapToResponse(registration, paymentRepository.findByRegistrationId(registration.getId()).orElse(null));
     }
 
     public List<RegistrationResponse> getUserRegistrations(Long userId) {
         return registrationRepository.findByUserId(userId).stream()
-                .map(this::mapToResponse)
+                .map(reg -> mapToResponse(reg, paymentRepository.findByRegistrationId(reg.getId()).orElse(null)))
                 .toList();
     }
 
     public RegistrationResponse getRegistration(Long id, Long userId) {
         Registration reg = findRegistrationOrThrow(id);
-
-        if (!reg.getUserId().equals(userId))
-            throw new SecurityException("Access denied");
-
-        return mapToResponse(reg);
+        if (!reg.getUserId().equals(userId)) throw new SecurityException("Access denied");
+        return mapToResponse(reg, paymentRepository.findByRegistrationId(id).orElse(null));
     }
 
     public List<RegistrationResponse> getEventRegistrations(Long eventId) {
-        List<Registration> registrations = registrationRepository.findByEventId(eventId);
-
-        return registrations.stream().map(this::mapToResponse).toList();
+        return registrationRepository.findByEventId(eventId).stream()
+                .map(reg -> mapToResponse(reg, paymentRepository.findByRegistrationId(reg.getId()).orElse(null)))
+                .toList();
     }
 
     public List<Long> getAllEventUsers(Long eventId) {
@@ -79,7 +97,7 @@ public class RegistrationService {
     }
 
     @Transactional
-    public RegistrationResponse cancelRegistration(Long registrationId, Long userId) {
+    public RegistrationResponse cancelRegistration(Long registrationId, Long userId, String token) {
         Registration registration = findRegistrationOrThrow(registrationId);
 
         if (!registration.getUserId().equals(userId)) {
@@ -93,9 +111,16 @@ public class RegistrationService {
         registration.setStatus(RegistrationStatus.CANCELLED);
         registrationRepository.save(registration);
 
-        eventServiceClient.releaseSpot(registration.getEventId());
+        Payment payment = paymentRepository.findByRegistrationId(registrationId).orElse(null);
+        if (payment != null) {
+            payment.setStatus(PaymentStatus.REFUNDED);
+            paymentRepository.save(payment);
+            log.info("Payment refunded: ${} for registration={}", payment.getAmount(), registrationId);
+        }
 
-        return mapToResponse(registration);
+        eventServiceClient.releaseSpot(registration.getEventId(), token);
+
+        return mapToResponse(registration, payment);
     }
 
     private Registration findRegistrationOrThrow(Long id) {
@@ -103,7 +128,7 @@ public class RegistrationService {
                 .orElseThrow(() -> new RegistrationNotFoundException("Registration not found: " + id));
     }
 
-    private RegistrationResponse mapToResponse(Registration reg) {
+    private RegistrationResponse mapToResponse(Registration reg, Payment payment) {
         return RegistrationResponse.builder()
                 .id(reg.getId())
                 .userId(reg.getUserId())
@@ -111,6 +136,8 @@ public class RegistrationService {
                 .eventTitle(reg.getEventTitle())
                 .status(reg.getStatus())
                 .registeredAt(reg.getRegisteredAt())
+                .amountPaid(payment != null ? payment.getAmount() : 0.0)
+                .paymentStatus(payment != null ? payment.getStatus() : null)
                 .build();
     }
 }

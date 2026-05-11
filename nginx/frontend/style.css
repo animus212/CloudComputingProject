@@ -170,3 +170,45 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     .data-table { font-size: 0.8rem; }
     .data-table th, .data-table td { padding: 0.5rem; }
 }
+
+
+.payment-summary {
+    background: #f0f7ff;
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+.payment-amount {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-top: 0.4rem;
+}
+
+
+.price-tag {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+.free-tag {
+    color: var(--success);
+}
+
+
+.role-note {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+.role-note a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+
+.payment-info {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0.4rem 0;
+}

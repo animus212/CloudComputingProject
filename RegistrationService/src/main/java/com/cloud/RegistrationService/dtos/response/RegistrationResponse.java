@@ -1,5 +1,6 @@
 package com.cloud.RegistrationService.dtos.response;
 
+import com.cloud.RegistrationService.entities.PaymentStatus;
 import com.cloud.RegistrationService.entities.RegistrationStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -15,4 +16,6 @@ public class RegistrationResponse {
     private String eventTitle;
     private RegistrationStatus status;
     private LocalDateTime registeredAt;
+    private Double amountPaid;
+    private PaymentStatus paymentStatus;
 }

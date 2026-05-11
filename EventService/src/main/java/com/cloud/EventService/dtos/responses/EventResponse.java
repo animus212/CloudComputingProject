@@ -4,7 +4,6 @@ import com.cloud.EventService.entities.EventStatus;
 import com.cloud.EventService.entities.EventType;
 import lombok.Builder;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Data
@@ -22,5 +21,6 @@ public class EventResponse {
     private Long organizerId;
     private EventStatus status;
     private EventType eventType;
+    private Double price;
     private LocalDateTime createdAt;
 }

@@ -1,281 +1,278 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Manage Events</title>
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <nav id="nav"></nav>
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Events</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav id="nav"></nav>
 
-        <div class="container">
-            <div class="page-header">
-                <h1>My Events</h1>
-                <button class="btn-primary" onclick="openCreateModal()">+ Create Event</button>
-            </div>
+<div class="container">
+    <div class="page-header">
+        <h1>My Events</h1>
+        <button class="btn-primary" onclick="openCreateModal()">+ Create Event</button>
+    </div>
 
-            <div id="error" class="alert alert-error hidden"></div>
-            <div id="success" class="alert alert-success hidden"></div>
-            <div id="events-list">
-                <div class="loading">Loading your events...</div>
-            </div>
+    <div id="error"   class="alert alert-error   hidden"></div>
+    <div id="success" class="alert alert-success hidden"></div>
+    <div id="events-list"><div class="loading">Loading your events...</div></div>
+</div>
+
+<!-- Create / Edit Event Modal -->
+<div id="eventModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Create Event</h2>
+            <button class="modal-close" onclick="closeModal()">✕</button>
         </div>
 
-        <div id="eventModal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 id="modalTitle">Create Event</h2>
-                    <button class="modal-close" onclick="closeModal()">✕</button>
-                </div>
+        <div id="modal-error" class="alert alert-error hidden"></div>
 
-                <div id="modal-error" class="alert alert-error hidden"></div>
-
-                <div class="form-group">
-                    <label>Title *</label>
-                    <input type="text" id="m-title" placeholder="Event title">
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="m-description" rows="3" placeholder="Describe your event"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Location *</label>
-                    <input type="text" id="m-location" placeholder="Where is it?">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Start Date *</label>
-                        <input type="datetime-local" id="m-startDate">
-                    </div>
-                    <div class="form-group">
-                        <label>End Date *</label>
-                        <input type="datetime-local" id="m-endDate">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Capacity *</label>
-                        <input type="number" id="m-capacity" min="1" placeholder="Max attendees">
-                    </div>
-                    <div class="form-group">
-                        <label>Type</label>
-                        <select id="m-eventType">
-                            <option value="CONFERENCE">Conference</option>
-                            <option value="WORKSHOP">Workshop</option>
-                            <option value="SEMINAR">Seminar</option>
-                            <option value="WEBINAR">Webinar</option>
-                            <option value="MEETUP">Meetup</option>
-                            <option value="OTHER">Other</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    <button class="btn-outline" onclick="closeModal()">Cancel</button>
-                    <button class="btn-primary" id="saveBtn" data-label="Save" onclick="saveEvent()">Save</button>
-                </div>
+        <div class="form-group">
+            <label>Title *</label>
+            <input type="text" id="m-title" placeholder="Event title">
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea id="m-description" rows="3" placeholder="Describe your event"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Location *</label>
+            <input type="text" id="m-location" placeholder="Where is it?">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Start Date *</label>
+                <input type="datetime-local" id="m-startDate">
+            </div>
+            <div class="form-group">
+                <label>End Date *</label>
+                <input type="datetime-local" id="m-endDate">
             </div>
         </div>
-
-        <div id="regsModal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Registrations</h2>
-                    <button class="modal-close" onclick="closeRegsModal()">✕</button>
-                </div>
-                <div id="regs-list"><div class="loading">Loading...</div></div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Capacity *</label>
+                <input type="number" id="m-capacity" min="1" placeholder="Max attendees">
+            </div>
+            <div class="form-group">
+                <label>Price ($) — 0 for free</label>
+                <!-- ← NEW price field -->
+                <input type="number" id="m-price" min="0" step="0.01" placeholder="0.00" value="0">
             </div>
         </div>
+        <div class="form-group">
+            <label>Type</label>
+            <select id="m-eventType">
+                <option value="CONFERENCE">Conference</option>
+                <option value="WORKSHOP">Workshop</option>
+                <option value="SEMINAR">Seminar</option>
+                <option value="WEBINAR">Webinar</option>
+                <option value="MEETUP">Meetup</option>
+                <option value="OTHER">Other</option>
+            </select>
+        </div>
 
-        <script src="app.js"></script>
-        <script>
-            Auth.requireOrganizer();
-            buildNav('organizer');
+        <div class="modal-actions">
+            <button class="btn-outline" onclick="closeModal()">Cancel</button>
+            <button class="btn-primary" id="saveBtn" data-label="Save" onclick="saveEvent()">Save</button>
+        </div>
+    </div>
+</div>
 
-            let editingEventId = null;
+<!-- Registrations Modal -->
+<div id="regsModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Registrations</h2>
+            <button class="modal-close" onclick="closeRegsModal()">✕</button>
+        </div>
+        <div id="regs-list"><div class="loading">Loading...</div></div>
+    </div>
+</div>
 
-            async function loadMyEvents() {
-                try {
-                    const data = await api('/api/events/my');
-                    const container = document.getElementById('events-list');
+<script src="app.js"></script>
+<script>
+    Auth.requireOrganizer();
+    buildNav('organizer');
 
-                    if (data.length === 0) {
-                        container.innerHTML = `
-                            <p class="empty-state">
-                                No events yet.
-                                <button class="btn-primary btn-sm" onclick="openCreateModal()">Create your first event</button>
-                            </p>`;
-                        return;
-                    }
+    let editingEventId = null;
 
-                    container.innerHTML = data.map(event => `
-                        <div class="card event-manage-card">
-                            <div class="card-header">
-                                <h3>${event.title}</h3>
-                                ${statusBadge(event.status)}
-                            </div>
-                            <div class="event-meta">
-                                <span>${event.location}</span>
-                                <span>${formatDate(event.startDate)}</span>
-                                <span>${event.registeredCount} / ${event.capacity}</span>
-                                <span>${event.eventType || ''}</span>
-                            </div>
-                            <div class="card-actions">
-                                <button class="btn-outline btn-sm" onclick="openEditModal(${JSON.stringify(event).replace(/"/g, '&quot;')})">
-                                    Edit
-                                </button>
-                                <button class="btn-outline btn-sm" onclick="viewRegistrations(${event.id})">
-                                    Registrations (${event.registeredCount})
-                                </button>
-                                ${event.status === 'DRAFT'
-                                    ? `<button class="btn-success btn-sm" onclick="publishEvent(${event.id})">Publish</button>`
-                                    : ''
-                                }
-                                ${event.status === 'PUBLISHED'
-                                    ? `<button class="btn-warning btn-sm" onclick="cancelEvent(${event.id})">Cancel Event</button>`
-                                    : ''
-                                }
-                                ${event.status !== 'PUBLISHED' || event.registeredCount === 0
-                                    ? `<button class="btn-danger btn-sm" onclick="deleteEvent(${event.id})">Delete</button>`
-                                    : ''
-                                }
-                            </div>
-                        </div>
-                    `).join('');
-                } catch (err) {
-                    showError('error', err.message);
-                }
+    async function loadMyEvents() {
+        try {
+            const data = await api('/api/events/my');
+            const c = document.getElementById('events-list');
+
+            if (!data.length) {
+                c.innerHTML = `<p class="empty-state">No events yet.
+                    <button class="btn-primary btn-sm" onclick="openCreateModal()">Create your first event</button></p>`;
+                return;
             }
 
-            function openCreateModal() {
-                editingEventId = null;
-                document.getElementById('modalTitle').textContent = 'Create Event';
-                ['m-title','m-description','m-location'].forEach(id => document.getElementById(id).value = '');
-                ['m-startDate','m-endDate'].forEach(id => document.getElementById(id).value = '');
-                document.getElementById('m-capacity').value = '';
-                document.getElementById('m-eventType').value = 'WORKSHOP';
-                hideError('modal-error');
-                document.getElementById('eventModal').classList.remove('hidden');
+            c.innerHTML = data.map(ev => `
+                <div class="card event-manage-card">
+                    <div class="card-header">
+                        <h3>${escapeHTML(ev.title)}</h3>
+                        ${statusBadge(ev.status)}
+                    </div>
+                    <div class="event-meta">
+                        <span>📍 ${escapeHTML(ev.location)}</span>
+                        <span>🗓 ${formatDate(ev.startDate)}</span>
+                        <span>🎟 ${ev.registeredCount} / ${ev.capacity}</span>
+                        <span>${ev.eventType || ''}</span>
+                        <!-- ← show price -->
+                        <span class="price-tag">${ev.price > 0 ? `💳 $${ev.price.toFixed(2)}` : '✅ Free'}</span>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-outline btn-sm"
+                                onclick="openEditModal(${JSON.stringify(ev).replace(/"/g, '&quot;')})">Edit</button>
+                        <button class="btn-outline btn-sm"
+                                onclick="viewRegistrations(${ev.id})">
+                            Registrations (${ev.registeredCount})
+                        </button>
+                        ${ev.status === 'DRAFT'
+                            ? `<button class="btn-success btn-sm" onclick="publishEvent(${ev.id})">Publish</button>`
+                            : ''}
+                        ${ev.status === 'PUBLISHED'
+                            ? `<button class="btn-warning btn-sm" onclick="cancelEvent(${ev.id})">Cancel Event</button>`
+                            : ''}
+                        ${ev.status !== 'PUBLISHED' || ev.registeredCount === 0
+                            ? `<button class="btn-danger btn-sm" onclick="deleteEvent(${ev.id})">Delete</button>`
+                            : ''}
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) {
+            showError('error', err.message);
+        }
+    }
+
+    function openCreateModal() {
+        editingEventId = null;
+        document.getElementById('modalTitle').textContent = 'Create Event';
+        ['m-title','m-description','m-location'].forEach(id => document.getElementById(id).value = '');
+        ['m-startDate','m-endDate'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('m-capacity').value  = '';
+        document.getElementById('m-price').value     = '0';      // ← reset price
+        document.getElementById('m-eventType').value = 'WORKSHOP';
+        hideError('modal-error');
+        document.getElementById('eventModal').classList.remove('hidden');
+    }
+
+    function openEditModal(ev) {
+        editingEventId = ev.id;
+        document.getElementById('modalTitle').textContent   = 'Edit Event';
+        document.getElementById('m-title').value            = ev.title;
+        document.getElementById('m-description').value      = ev.description || '';
+        document.getElementById('m-location').value         = ev.location;
+        document.getElementById('m-startDate').value        = ev.startDate?.slice(0,16) || '';
+        document.getElementById('m-endDate').value          = ev.endDate?.slice(0,16) || '';
+        document.getElementById('m-capacity').value         = ev.capacity;
+        document.getElementById('m-price').value            = ev.price ?? 0;  // ← set price
+        document.getElementById('m-eventType').value        = ev.eventType || 'OTHER';
+        hideError('modal-error');
+        document.getElementById('eventModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('eventModal').classList.add('hidden');
+    }
+
+    async function saveEvent() {
+        hideError('modal-error');
+        setLoading('saveBtn', true);
+
+        const body = {
+            title:       document.getElementById('m-title').value,
+            description: document.getElementById('m-description').value,
+            location:    document.getElementById('m-location').value,
+            startDate:   document.getElementById('m-startDate').value,
+            endDate:     document.getElementById('m-endDate').value,
+            capacity:    parseInt(document.getElementById('m-capacity').value),
+            price:       parseFloat(document.getElementById('m-price').value) || 0,  // ← include price
+            eventType:   document.getElementById('m-eventType').value
+        };
+
+        try {
+            if (editingEventId) {
+                await api(`/api/events/${editingEventId}`, 'PUT', body);
+                showSuccess('success', 'Event updated successfully!');
+            } else {
+                await api('/api/events', 'POST', body);
+                showSuccess('success', 'Event created! Publish it when ready.');
             }
-
-            function openEditModal(event) {
-                editingEventId = event.id;
-                document.getElementById('modalTitle').textContent = 'Edit Event';
-                document.getElementById('m-title').value = event.title;
-                document.getElementById('m-description').value = event.description || '';
-                document.getElementById('m-location').value = event.location;
-                document.getElementById('m-startDate').value = event.startDate?.slice(0,16) || '';
-                document.getElementById('m-endDate').value = event.endDate?.slice(0,16) || '';
-                document.getElementById('m-capacity').value = event.capacity;
-                document.getElementById('m-eventType').value = event.eventType || 'OTHER';
-                hideError('modal-error');
-                document.getElementById('eventModal').classList.remove('hidden');
-            }
-
-            function closeModal() {
-                document.getElementById('eventModal').classList.add('hidden');
-            }
-
-            async function saveEvent() {
-                hideError('modal-error');
-                setLoading('saveBtn', true);
-
-                const body = {
-                    title: document.getElementById('m-title').value,
-                    description: document.getElementById('m-description').value,
-                    location: document.getElementById('m-location').value,
-                    startDate: document.getElementById('m-startDate').value,
-                    endDate: document.getElementById('m-endDate').value,
-                    capacity: parseInt(document.getElementById('m-capacity').value),
-                    eventType: document.getElementById('m-eventType').value
-                };
-
-                try {
-                    if (editingEventId) {
-                        await api(`/api/events/${editingEventId}`, 'PUT', body);
-                        showSuccess('success', 'Event updated successfully!');
-                    } else {
-                        await api('/api/events', 'POST', body);
-                        showSuccess('success', 'Event created! Publish it when ready.');
-                    }
-                    closeModal();
-                    loadMyEvents();
-                } catch (err) {
-                    showError('modal-error', err.message);
-                } finally {
-                    setLoading('saveBtn', false);
-                }
-            }
-
-            async function publishEvent(id) {
-                if (!confirm('Publish this event? It will be visible to all users.')) return;
-                try {
-                    await api(`/api/events/${id}/publish`, 'PATCH');
-                    showSuccess('success', 'Event published!');
-                    loadMyEvents();
-                } catch (err) {
-                    showError('error', err.message);
-                }
-            }
-
-            async function cancelEvent(id) {
-                if (!confirm('Cancel this event? Registered participants will be notified.')) return;
-                try {
-                    await api(`/api/events/${id}/cancel`, 'PATCH');
-                    showSuccess('success', 'Event cancelled.');
-                    loadMyEvents();
-                } catch (err) {
-                    showError('error', err.message);
-                }
-            }
-
-            async function deleteEvent(id) {
-                if (!confirm('Delete this event permanently?')) return;
-                try {
-                    await api(`/api/events/${id}`, 'DELETE');
-                    showSuccess('success', 'Event deleted.');
-                    loadMyEvents();
-                } catch (err) {
-                    showError('error', err.message);
-                }
-            }
-
-            async function viewRegistrations(eventId) {
-                document.getElementById('regsModal').classList.remove('hidden');
-                document.getElementById('regs-list').innerHTML = '<div class="loading">Loading...</div>';
-
-                try {
-                    const data = await api(`/api/registrations/event/${eventId}`);
-                    if (data.length === 0) {
-                        document.getElementById('regs-list').innerHTML = '<p class="empty-state">No registrations yet.</p>';
-                        return;
-                    }
-                    document.getElementById('regs-list').innerHTML = `
-                        <table class="data-table">
-                            <thead>
-                                <tr><th>User ID</th><th>Status</th><th>Registered</th></tr>
-                            </thead>
-                            <tbody>
-                                ${data.map(r => `
-                                    <tr>
-                                        <td>${r.userId}</td>
-                                        <td>${statusBadge(r.status)}</td>
-                                        <td>${formatDate(r.registeredAt)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
-                } catch (err) {
-                    document.getElementById('regs-list').innerHTML = `<p class="alert alert-error">${err.message}</p>`;
-                }
-            }
-
-            function closeRegsModal() {
-                document.getElementById('regsModal').classList.add('hidden');
-            }
-
+            closeModal();
             loadMyEvents();
-        </script>
-    </body>
+        } catch (err) {
+            showError('modal-error', err.message);
+        } finally {
+            setLoading('saveBtn', false);
+        }
+    }
+
+    async function publishEvent(id) {
+        if (!confirm('Publish this event? It will be visible to all users.')) return;
+        try {
+            await api(`/api/events/${id}/publish`, 'PATCH');
+            showSuccess('success', 'Event published!');
+            loadMyEvents();
+        } catch (err) { showError('error', err.message); }
+    }
+
+    async function cancelEvent(id) {
+        if (!confirm('Cancel this event? Registered participants will be notified.')) return;
+        try {
+            await api(`/api/events/${id}/cancel`, 'PATCH');
+            showSuccess('success', 'Event cancelled.');
+            loadMyEvents();
+        } catch (err) { showError('error', err.message); }
+    }
+
+    async function deleteEvent(id) {
+        if (!confirm('Delete this event permanently?')) return;
+        try {
+            await api(`/api/events/${id}`, 'DELETE');
+            showSuccess('success', 'Event deleted.');
+            loadMyEvents();
+        } catch (err) { showError('error', err.message); }
+    }
+
+    async function viewRegistrations(eventId) {
+        document.getElementById('regsModal').classList.remove('hidden');
+        document.getElementById('regs-list').innerHTML = '<div class="loading">Loading...</div>';
+        try {
+            const data = await api(`/api/registrations/event/${eventId}`);
+            if (!data.length) {
+                document.getElementById('regs-list').innerHTML = '<p class="empty-state">No registrations yet.</p>';
+                return;
+            }
+            document.getElementById('regs-list').innerHTML = `
+                <table class="data-table">
+                    <thead><tr>
+                        <th>User ID</th><th>Status</th><th>Paid</th><th>Payment</th><th>Registered</th>
+                    </tr></thead>
+                    <tbody>
+                        ${data.map(r => `
+                            <tr>
+                                <td>${r.userId}</td>
+                                <td>${statusBadge(r.status)}</td>
+                                <td>${r.amountPaid > 0 ? '$' + r.amountPaid.toFixed(2) : 'Free'}</td>
+                                <td>${r.paymentStatus ? statusBadge(r.paymentStatus) : '—'}</td>
+                                <td>${formatDate(r.registeredAt)}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        } catch (err) {
+            document.getElementById('regs-list').innerHTML = `<p class="alert alert-error">${err.message}</p>`;
+        }
+    }
+
+    function closeRegsModal() {
+        document.getElementById('regsModal').classList.add('hidden');
+    }
+
+    loadMyEvents();
+</script>
+</body>
 </html>

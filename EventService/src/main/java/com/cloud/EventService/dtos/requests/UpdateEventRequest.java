@@ -3,7 +3,6 @@ package com.cloud.EventService.dtos.requests;
 import com.cloud.EventService.entities.EventType;
 import jakarta.validation.constraints.*;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Data
@@ -30,4 +29,7 @@ public class UpdateEventRequest {
     private Integer capacity;
 
     private EventType eventType;
+
+    @DecimalMin(value = "0.0", message = "Price cannot be negative")
+    private Double price = 0.0;
 }
