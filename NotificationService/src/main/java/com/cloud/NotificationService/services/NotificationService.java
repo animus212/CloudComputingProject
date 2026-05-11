@@ -25,16 +25,16 @@ public class NotificationService {
     @Transactional
     public void createEventUpdatedNotification(EventUpdatedEvent event) {
         String message = String.format("""
-                        The event you registered for has been updated.
-                        
-                        Event: %s
-                        Date: %s
-                        Location: %s
-                        Event Type: %s
-                        Event Status: %s
-                        
-                        Please check the event page for the latest information.
-                        """,
+                    The event you registered for has been updated.
+                    
+                    Event: %s
+                    Date: %s
+                    Location: %s
+                    Event Type: %s
+                    Event Status: %s
+                    
+                    Please check the event page for the latest information.
+                    """,
                 event.getTitle(),
                 event.getStartDate(),
                 event.getLocation(),
@@ -42,7 +42,35 @@ public class NotificationService {
                 event.getEventStatus()
         );
 
-        createNotifications(event.getEventId(), message, NotificationType.EVENT_UPDATED);
+
+        if ("CANCELLED".equals(event.getEventStatus())) {
+            createNotificationsForAll(event.getEventId(), message, NotificationType.EVENT_UPDATED);
+        } else {
+            createNotifications(event.getEventId(), message, NotificationType.EVENT_UPDATED);
+        }
+    }
+
+
+    private void createNotifications(Long eventId, String message, NotificationType type) {
+        List<Notification> notifications = getAllEventUsers(eventId).stream()
+                .map(userId -> Notification.builder()
+                        .userId(userId)
+                        .type(type)
+                        .message(message)
+                        .build())
+                .toList();
+
+        notificationRepository.saveAll(notifications);
+    }
+
+
+    private void createNotificationsForAll(Long eventId, String message, NotificationType type) {
+        List<Notification> notifications = registrationServiceClient
+                .getAllEventUsersIncludingCancelled(eventId).stream()  // ← different client method
+                .map(userId -> Notification.builder()
+                        .userId(userId).type(type).message(message).build())
+                .toList();
+        notificationRepository.saveAll(notifications);
     }
 
     @Transactional
@@ -99,17 +127,7 @@ public class NotificationService {
         return registrationServiceClient.getAllEventUsers(eventId);
     }
 
-    private void createNotifications(Long eventId, String message, NotificationType type) {
-        List<Notification> notifications = getAllEventUsers(eventId).stream()
-                .map(userId -> Notification.builder()
-                        .userId(userId)
-                        .type(type)
-                        .message(message)
-                        .build())
-                .toList();
 
-        notificationRepository.saveAll(notifications);
-    }
 
     private Notification findAndAssertOwner(Long id, Long userId) {
         Notification notification = notificationRepository.findById(id)

@@ -20,4 +20,7 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
             @Param("status") RegistrationStatus status
     );
     boolean existsByUserIdAndEventIdAndStatusNot(Long userId, Long eventId, RegistrationStatus status);
+
+    @Query("SELECT DISTINCT r.userId FROM Registration r WHERE r.eventId = :eventId")
+    List<Long> findAllUserIdsByEventId(@Param("eventId") Long eventId);
 }

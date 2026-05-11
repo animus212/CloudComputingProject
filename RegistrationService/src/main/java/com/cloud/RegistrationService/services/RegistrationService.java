@@ -141,7 +141,7 @@ public class RegistrationService {
                 .build();
     }
 
-    // Add these two methods to the existing RegistrationService class
+
 
     @Transactional
     public void cancelAllForUser(Long userId) {
@@ -170,5 +170,9 @@ public class RegistrationService {
             // No need to release spots — event itself is cancelled
             log.info("Cancelled registration={} for cancelled eventId={}", reg.getId(), eventId);
         }
+    }
+
+    public List<Long> getAllEventUsersIncludingCancelled(Long eventId) {
+        return registrationRepository.findAllUserIdsByEventId(eventId);
     }
 }

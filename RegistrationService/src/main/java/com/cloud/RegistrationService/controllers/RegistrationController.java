@@ -75,6 +75,14 @@ public class RegistrationController {
         return  ResponseEntity.ok(registrationService.getAllEventUsers(eventId));
     }
 
+
+    @GetMapping("/event/internal/{eventId}/all")
+    public ResponseEntity<List<Long>> getAllEventUsersIncludingCancelled(
+            @PathVariable Long eventId) {
+        return ResponseEntity.ok(
+                registrationService.getAllEventUsersIncludingCancelled(eventId));
+    }
+
     private Long getUserId(HttpServletRequest request) {
         return (Long) request.getAttribute("userId");
     }

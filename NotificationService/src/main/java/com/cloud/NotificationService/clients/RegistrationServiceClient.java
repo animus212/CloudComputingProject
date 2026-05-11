@@ -34,4 +34,19 @@ public class RegistrationServiceClient {
             throw new RuntimeException("Cannot get ids: " + e.getMessage(), e);
         }
     }
+
+
+    public List<Long> getAllEventUsersIncludingCancelled(Long eventId) {
+        try {
+            return webClient.get()
+                    .uri("/api/registrations/event/internal/{eventId}/all", eventId)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<List<Long>>() {})
+                    .block();
+        } catch (WebClientResponseException e) {
+            log.error("Failed to get all user ids for event {}: {} - {}",
+                    eventId, e.getStatusCode(), e.getResponseBodyAsString());
+            throw new RuntimeException("Cannot get user ids: " + e.getMessage(), e);
+        }
+    }
 }
