@@ -151,28 +151,30 @@
     }
 
     function handleRegister(eventId) {
-        const ev = eventsMap[eventId];
-        if (!ev) return;
+    const ev = eventsMap[eventId];
+    if (!ev) return;
+
+
+        document.querySelectorAll('.btn-primary[onclick]').forEach(b => b.disabled = true);
+
         if (ev.price > 0) {
             openPaymentModal(ev);
+
         } else {
             registerFree(eventId);
         }
     }
 
     async function registerFree(eventId) {
-        try {
-            await api(`/api/registrations/event/${eventId}`, 'POST');
-            showSuccess('error', 'Registered successfully!');  // reuse element as success
-            document.getElementById('error').className = 'alert alert-success';
-            setTimeout(() => {
-                document.getElementById('error').className = 'alert alert-success hidden';
-            }, 3000);
-            loadEvents(currentPage);
-        } catch (err) {
-            showError('error', err.message);
-        }
+    try {
+        await api(`/api/registrations/event/${eventId}`, 'POST');
+        loadEvents(currentPage);
+    } catch (err) {
+        showError('error', err.message);
+        // Re-enable on failure so user can retry
+        document.querySelectorAll('.btn-primary[onclick]').forEach(b => b.disabled = false);
     }
+}
 
     // ── Filter & paginate ──────────────────────────────────────────
     function filterEvents() {
@@ -207,9 +209,11 @@
     }
 
     function closePaymentModal() {
-        pendingEventId = null;
-        document.getElementById('paymentModal').classList.add('hidden');
-    }
+    pendingEventId = null;
+    document.getElementById('paymentModal').classList.add('hidden');
+
+    document.querySelectorAll('.btn-primary[onclick]').forEach(b => b.disabled = false);
+}
 
     async function confirmPayment() {
         const name   = document.getElementById('pay-name').value.trim();

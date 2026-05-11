@@ -42,16 +42,20 @@ public class RegistrationService {
             );
         }
 
-        EventSummaryDto eventSummary = eventServiceClient.reserveSpot(eventId,token);
+        Registration registration = registrationRepository.save(
+                Registration.builder()
+                        .userId(userId)
+                        .eventId(eventId)
+                        .status(RegistrationStatus.CONFIRMED)
+                        .build()
+        );
 
-        Registration registration = Registration.builder()
-                .userId(userId)
-                .eventId(eventId)
-                .eventTitle(eventSummary.getTitle())
-                .status(RegistrationStatus.CONFIRMED)
-                .build();
 
-        registration = registrationRepository.save(registration);
+        EventSummaryDto eventSummary = eventServiceClient.reserveSpot(eventId, token);
+
+
+        registration.setEventTitle(eventSummary.getTitle());
+        registrationRepository.save(registration);
 
 
         Payment payment = null;
