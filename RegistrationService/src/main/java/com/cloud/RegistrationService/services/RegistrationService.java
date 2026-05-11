@@ -61,7 +61,7 @@ public class RegistrationService {
         Payment payment = null;
         if (eventSummary.getPrice() != null && eventSummary.getPrice() > 0) {
             payment = paymentRepository.save(Payment.builder()
-                    .registrationId(eventSummary.getId())
+                    .registrationId(registration.getId())
                     .userId(userId)
                     .eventId(eventId)
                     .amount(eventSummary.getPrice())
