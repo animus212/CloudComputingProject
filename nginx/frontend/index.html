@@ -150,20 +150,20 @@
                 </button>`;
     }
 
-    function handleRegister(eventId) {
+
+function handleRegister(eventId) {
     const ev = eventsMap[eventId];
     if (!ev) return;
 
 
-        document.querySelectorAll('.btn-primary[onclick]').forEach(b => b.disabled = true);
+    document.querySelectorAll('.card-actions .btn-primary').forEach(b => b.disabled = true);
 
-        if (ev.price > 0) {
-            openPaymentModal(ev);
-
-        } else {
-            registerFree(eventId);
-        }
+    if (ev.price > 0) {
+        openPaymentModal(ev);
+    } else {
+        registerFree(eventId);
     }
+}
 
     async function registerFree(eventId) {
     try {
@@ -171,8 +171,8 @@
         loadEvents(currentPage);
     } catch (err) {
         showError('error', err.message);
-        // Re-enable on failure so user can retry
-        document.querySelectorAll('.btn-primary[onclick]').forEach(b => b.disabled = false);
+
+        document.querySelectorAll('.card-actions .btn-primary').forEach(b => b.disabled = false);
     }
 }
 
@@ -211,8 +211,7 @@
     function closePaymentModal() {
     pendingEventId = null;
     document.getElementById('paymentModal').classList.add('hidden');
-
-    document.querySelectorAll('.btn-primary[onclick]').forEach(b => b.disabled = false);
+    document.querySelectorAll('.card-actions .btn-primary').forEach(b => b.disabled = false);
 }
 
     async function confirmPayment() {
