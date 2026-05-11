@@ -154,10 +154,6 @@
 function handleRegister(eventId) {
     const ev = eventsMap[eventId];
     if (!ev) return;
-
-
-    document.querySelectorAll('.card-actions .btn-primary').forEach(b => b.disabled = true);
-
     if (ev.price > 0) {
         openPaymentModal(ev);
     } else {
@@ -171,8 +167,6 @@ function handleRegister(eventId) {
         loadEvents(currentPage);
     } catch (err) {
         showError('error', err.message);
-
-        document.querySelectorAll('.card-actions .btn-primary').forEach(b => b.disabled = false);
     }
 }
 
@@ -211,7 +205,6 @@ function handleRegister(eventId) {
     function closePaymentModal() {
     pendingEventId = null;
     document.getElementById('paymentModal').classList.add('hidden');
-    document.querySelectorAll('.card-actions .btn-primary').forEach(b => b.disabled = false);
 }
 
     async function confirmPayment() {
