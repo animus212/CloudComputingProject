@@ -136,9 +136,15 @@ services:
       DB_USER: ${USER_DB_USER}
       DB_PASSWORD: ${USER_DB_PASSWORD}
       SERVER_PORT: 8081
+      RABBITMQ_HOST: rabbitmq-prod
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     depends_on:
       user-db-prod:
+        condition: service_healthy
+      rabbitmq-prod:
         condition: service_healthy
 
   event-service:
@@ -183,9 +189,15 @@ services:
       DB_PASSWORD: ${REGISTRATION_DB_PASSWORD}
       EVENT_SERVICE_URL: http://event-service:8082
       SERVER_PORT: 8083
+      RABBITMQ_HOST: rabbitmq-prod
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     depends_on:
       registration-db-prod:
+        condition: service_healthy
+      rabbitmq-prod:
         condition: service_healthy
 
   notification-service:

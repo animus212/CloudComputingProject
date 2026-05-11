@@ -132,6 +132,8 @@ services:
     depends_on:
       user-db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "5005:5005"
 
@@ -175,6 +177,8 @@ services:
         condition: service_healthy
       event-service:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "5007:5007"
 

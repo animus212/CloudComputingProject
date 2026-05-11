@@ -28,8 +28,6 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
-            - name: JPA_DDL_AUTO
-              value: update
             - name: SERVER_PORT
               value: "8081"
             - name: JWT_SECRET
@@ -52,6 +50,20 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: db-password
+            - name: RABBITMQ_HOST
+              value: rabbitmq
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: rabbitmq-user
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: rabbitmq-password
             - name: JAVA_OPTS
               value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
           readinessProbe:

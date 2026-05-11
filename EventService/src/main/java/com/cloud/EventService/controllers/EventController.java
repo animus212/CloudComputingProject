@@ -124,6 +124,14 @@ public class EventController {
         return ResponseEntity.noContent().build();
     }
 
+
+    @PostMapping("/{id}/release/internal")
+    public ResponseEntity<Void> releaseSpotInternal(@PathVariable Long id) {
+        // Called by RegistrationService async listener — no JWT available in that context
+        eventService.releaseSpot(id);
+        return ResponseEntity.noContent().build();
+    }
+
     private Long getUserId(HttpServletRequest request) {
         return (Long) request.getAttribute("userId");
     }

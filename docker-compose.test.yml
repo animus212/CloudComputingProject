@@ -116,6 +116,8 @@ services:
     depends_on:
       user-db-test:
         condition: service_healthy
+      rabbitmq-test:
+        condition: service_healthy
 
   event-service-test:
     <<: *test-java
@@ -158,6 +160,8 @@ services:
       EVENT_SERVICE_URL: http://event-service-test:8082
     depends_on:
       registration-db-test:
+        condition: service_healthy
+      rabbitmq-test:
         condition: service_healthy
 
   notification-service-test:

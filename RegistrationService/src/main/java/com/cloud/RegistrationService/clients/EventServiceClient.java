@@ -13,12 +13,10 @@ public class EventServiceClient {
     private final WebClient webClient;
 
     public EventServiceClient(@Value("${services.event-service.base-url}") String baseUrl) {
-        this.webClient = WebClient.builder()
-                .baseUrl(baseUrl)
-                .build();
+        this.webClient = WebClient.builder().baseUrl(baseUrl).build();
     }
 
-    public EventSummaryDto reserveSpot(Long eventId,String bearerToken) {
+    public EventSummaryDto reserveSpot(Long eventId, String bearerToken) {
         try {
             return webClient.post()
                     .uri("/api/events/{id}/reserve", eventId)
@@ -29,7 +27,6 @@ public class EventServiceClient {
         } catch (WebClientResponseException e) {
             log.error("Failed to reserve spot for event {}: {} - {}",
                     eventId, e.getStatusCode(), e.getResponseBodyAsString());
-
             throw new RuntimeException("Cannot reserve spot: " + e.getMessage(), e);
         }
     }
@@ -44,6 +41,19 @@ public class EventServiceClient {
                     .block();
         } catch (WebClientResponseException e) {
             log.error("Failed to release spot for event {}: {}", eventId, e.getMessage());
+        }
+    }
+
+    // ← Used by async listeners where no JWT token is available
+    public void releaseSpotInternal(Long eventId) {
+        try {
+            webClient.post()
+                    .uri("/api/events/{id}/release/internal", eventId)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+        } catch (WebClientResponseException e) {
+            log.error("Failed to internally release spot for event {}: {}", eventId, e.getMessage());
         }
     }
 }

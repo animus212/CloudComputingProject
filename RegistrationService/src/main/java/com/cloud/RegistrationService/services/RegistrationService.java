@@ -140,4 +140,35 @@ public class RegistrationService {
                 .paymentStatus(payment != null ? payment.getStatus() : null)
                 .build();
     }
+
+    // Add these two methods to the existing RegistrationService class
+
+    @Transactional
+    public void cancelAllForUser(Long userId) {
+        List<Registration> active = registrationRepository.findByUserId(userId).stream()
+                .filter(r -> r.getStatus() == RegistrationStatus.CONFIRMED)
+                .toList();
+
+        for (Registration reg : active) {
+            reg.setStatus(RegistrationStatus.CANCELLED);
+            registrationRepository.save(reg);
+            // Release the spot so other users can register
+            eventServiceClient.releaseSpotInternal(reg.getEventId());
+            log.info("Cancelled registration={} for deleted userId={}", reg.getId(), userId);
+        }
+    }
+
+    @Transactional
+    public void cancelAllForEvent(Long eventId) {
+        List<Registration> active = registrationRepository.findByEventId(eventId).stream()
+                .filter(r -> r.getStatus() == RegistrationStatus.CONFIRMED)
+                .toList();
+
+        for (Registration reg : active) {
+            reg.setStatus(RegistrationStatus.CANCELLED);
+            registrationRepository.save(reg);
+            // No need to release spots — event itself is cancelled
+            log.info("Cancelled registration={} for cancelled eventId={}", reg.getId(), eventId);
+        }
+    }
 }
